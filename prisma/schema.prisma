@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String        @id @default(cuid())
+  githubId     String        @unique
+  username     String        @unique
+  name         String?
+  email        String?       @unique
+  avatar       String?
+  plan         Plan          @default(FREE)
+  stripeId     String?
+  createdAt    DateTime      @default(now())
+  portfolio    Portfolio?
+  subscription Subscription?
+}
+
+model Portfolio {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  user         User      @relation(fields: [userId], references: [id])
+  bio          String?
+  skills       String[]
+  theme        String    @default("minimal")
+  customDomain String?
+  projects     Project[]
+  views        View[]
+  updatedAt    DateTime  @updatedAt
+}
+
+model Project {
+  id          String    @id @default(cuid())
+  portfolioId String
+  portfolio   Portfolio @relation(fields: [portfolioId], references: [id])
+  repoName    String
+  title       String
+  description String?
+  language    String?
+  stars       Int       @default(0)
+  url         String
+  screenshot  String?
+  order       Int       @default(0)
+  featured    Boolean   @default(false)
+}
+
+model View {
+  id          String    @id @default(cuid())
+  portfolioId String
+  portfolio   Portfolio @relation(fields: [portfolioId], references: [id])
+  country     String?
+  referrer    String?
+  createdAt   DateTime  @default(now())
+}
+
+model Subscription {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id])
+  stripeSubId      String   @unique
+  stripePriceId    String
+  status           String
+  currentPeriodEnd DateTime
+}
+
+enum Plan {
+  FREE
+  PRO
+}

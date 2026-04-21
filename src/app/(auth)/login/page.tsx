@@ -1,12 +1,45 @@
-import { signIn } from '../../../lib/auth'
-import { Button } from '@/components/ui/button'
+'use client'
+
+import { useState } from 'react'
 
 export default function LoginPage() {
+  const [loading, setLoading] = useState(false)
+
+  async function handleSignIn() {
+    setLoading(true)
+    try {
+      // 1. Get CSRF token from NextAuth
+      const csrfRes = await fetch('/api/auth/csrf')
+      const { csrfToken } = await csrfRes.json()
+
+      // 2. POST to signin with CSRF token
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = '/api/auth/signin/github'
+
+      const csrfInput = document.createElement('input')
+      csrfInput.type = 'hidden'
+      csrfInput.name = 'csrfToken'
+      csrfInput.value = csrfToken
+
+      const callbackInput = document.createElement('input')
+      callbackInput.type = 'hidden'
+      callbackInput.name = 'callbackUrl'
+      callbackInput.value = '/dashboard'
+
+      form.appendChild(csrfInput)
+      form.appendChild(callbackInput)
+      document.body.appendChild(form)
+      form.submit()
+    } catch {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-950">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-10 flex flex-col items-center gap-6 w-full max-w-md shadow-xl">
-        
-        {/* Logo */}
+
         <div className="flex flex-col items-center gap-2">
           <div className="text-4xl font-bold text-white">
             Dev<span className="text-violet-500">Folio</span>
@@ -16,10 +49,8 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Divider */}
         <div className="w-full border-t border-slate-800" />
 
-        {/* Sign in text */}
         <div className="text-center">
           <h1 className="text-xl font-semibold text-white mb-1">
             Welcome back
@@ -29,34 +60,18 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* GitHub Sign In Button */}
-        <form
-          action={async () => {
-            'use server'
-            await signIn('github', { redirectTo: '/dashboard' })
-          }}
-          className="w-full"
+        <button
+          onClick={handleSignIn}
+          disabled={loading}
+          className="w-full bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-3 transition-colors"
         >
-          <Button
-            type="submit"
-            className="w-full bg-violet-600 hover:bg-violet-700 text-white font-semibold py-5 rounded-xl flex items-center justify-center gap-3"
-          >
-            {/* GitHub Icon */}
-            <svg
-              className="w-5 h-5"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-            </svg>
-            Continue with GitHub
-          </Button>
-        </form>
+          {loading ? 'Redirecting...' : 'Continue with GitHub'}
+        </button>
 
-        {/* Footer note */}
         <p className="text-slate-500 text-xs text-center">
           By signing in, you agree to our Terms of Service and Privacy Policy.
         </p>
+
       </div>
     </div>
   )

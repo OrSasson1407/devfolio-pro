@@ -4,6 +4,12 @@ const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
 })
 
+// Use Opus only where quality matters most (bio = user's first impression).
+// Descriptions and skills are short, structured outputs — Haiku is faster and
+// ~25x cheaper with no meaningful quality difference for these tasks.
+const OPUS_MODEL = 'claude-opus-4-6'
+const HAIKU_MODEL = 'claude-haiku-4-5-20251001'
+
 interface BioInput {
   username: string
   projects: { name: string; language: string | null }[]
@@ -22,7 +28,7 @@ interface SkillsInput {
 
 export async function generateBio({ username, projects, skills }: BioInput): Promise<string> {
   const message = await client.messages.create({
-    model: 'claude-opus-4-6',
+    model: OPUS_MODEL,
     max_tokens: 300,
     messages: [
       {
@@ -41,7 +47,7 @@ Keep it concise, confident, and human. No buzzwords. No "passionate about".`,
 
 export async function generateProjectDescription({ repoName, language, stars }: DescriptionInput): Promise<string> {
   const message = await client.messages.create({
-    model: 'claude-opus-4-6',
+    model: HAIKU_MODEL,
     max_tokens: 100,
     messages: [
       {
@@ -65,7 +71,7 @@ export async function generateSkills({ projects }: SkillsInput): Promise<string[
     .join(', ')
 
   const message = await client.messages.create({
-    model: 'claude-opus-4-6',
+    model: HAIKU_MODEL,
     max_tokens: 150,
     messages: [
       {

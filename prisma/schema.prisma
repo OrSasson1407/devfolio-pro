@@ -5,6 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Account {
@@ -52,8 +53,8 @@ model User {
   image            String?
   plan             Plan          @default(FREE)
   stripeId         String?
-  aiCallsThisMonth Int           @default(0)   // WARNING FIX: Dedicated AI counter
-  aiCallsResetAt   DateTime?                   // WARNING FIX: Monthly reset date
+  aiCallsThisMonth Int           @default(0)
+  aiCallsResetAt   DateTime?
   createdAt        DateTime      @default(now())
   accounts         Account[]
   sessions         Session[]

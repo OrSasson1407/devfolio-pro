@@ -6,7 +6,8 @@ test.describe('Authentication Flow', () => {
     await page.goto('/login')
 
     // Verify the page title or main heading
-    const heading = page.getByRole('heading', { name: /Sign in to DevFolio Pro/i })
+    // BUG FIX: Changed from "Sign in to DevFolio Pro" to match the actual page
+    const heading = page.getByRole('heading', { name: /Welcome back/i })
     await expect(heading).toBeVisible()
 
     // Verify the GitHub OAuth button exists

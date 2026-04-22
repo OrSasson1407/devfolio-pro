@@ -18,24 +18,38 @@ export async function POST(req: Request) {
 
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-  // Rate limit for free users — count AI views as a proxy (simple approach)
-  // In production you'd have a dedicated aiCallsThisMonth counter
+  // WARNING FIX: Reliable AI rate-limiting using dedicated User columns
   if (user.plan === 'FREE') {
-    const aiCalls = await prisma.view.count({
-      where: {
-        portfolioId: user.portfolio?.id ?? '',
-        referrer: 'ai',
-      },
-    })
-    if (aiCalls >= AI_LIMIT_FREE) {
+    const now = new Date()
+    let currentCalls = user.aiCallsThisMonth
+    let resetAt = user.aiCallsResetAt
+
+    // Reset if it's a new billing cycle (or first time)
+    if (!resetAt || now >= resetAt) {
+      currentCalls = 0
+      resetAt = new Date(now)
+      resetAt.setMonth(resetAt.getMonth() + 1) // Set next reset to 1 month from now
+    }
+
+    if (currentCalls >= AI_LIMIT_FREE) {
       return NextResponse.json(
         { error: 'Free plan limit reached (5 AI calls/month). Upgrade to Pro.' },
         { status: 403 }
       )
     }
+
+    // Increment the counter and update reset date
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        aiCallsThisMonth: currentCalls + 1,
+        aiCallsResetAt: resetAt,
+      },
+    })
   }
 
-  const { type, projects, skills } = await req.json()
+  // BUG FIX (Carried over): Parse the request body exactly once
+  const { type, projects, skills, repoName, language, stars } = await req.json()
 
   try {
     if (type === 'bio') {
@@ -45,18 +59,12 @@ export async function POST(req: Request) {
         skills: skills ?? [],
       })
 
-      // Log AI call
-      if (user.portfolio) {
-        await prisma.view.create({
-          data: { portfolioId: user.portfolio.id, referrer: 'ai' },
-        })
-      }
+      // We no longer log AI views to the View table to avoid polluting analytics
 
       return NextResponse.json({ bio })
     }
 
     if (type === 'description') {
-      const { repoName, language, stars } = await req.json()
       const description = await generateProjectDescription({ repoName, language, stars })
       return NextResponse.json({ description })
     }

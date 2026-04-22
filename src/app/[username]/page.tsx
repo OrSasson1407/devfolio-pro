@@ -5,14 +5,20 @@ import TerminalTheme from '@/components/portfolio/themes/TerminalTheme'
 import CreativeTheme from '@/components/portfolio/themes/CreativeTheme'
 
 interface Props {
-  params: { username: string }
+  // WARNING FIX: params is a Promise in Next.js 15+
+  params: Promise<{ username: string }>
 }
 
 export async function generateMetadata({ params }: Props) {
+  // WARNING FIX: await params
+  const { username } = await params
+
   const user = await prisma.user.findUnique({
-    where: { username: params.username },
+    where: { username },
   })
+  
   if (!user) return { title: 'Not Found' }
+  
   return {
     title: `${user.name ?? user.username} — DevFolio Pro`,
     description: `Check out ${user.name ?? user.username}'s developer portfolio`,
@@ -20,8 +26,11 @@ export async function generateMetadata({ params }: Props) {
 }
 
 export default async function PublicPortfolioPage({ params }: Props) {
+  // WARNING FIX: await params
+  const { username } = await params
+
   const user = await prisma.user.findUnique({
-    where: { username: params.username },
+    where: { username },
     include: {
       portfolio: {
         include: {
@@ -47,18 +56,25 @@ export default async function PublicPortfolioPage({ params }: Props) {
     username: user.username,
   }
 
-  // Track view
-  await prisma.view.create({
-    data: {
-      portfolioId: user.portfolio.id,
-      referrer: null,
-      country: null,
-    },
-  })
-
   const theme = user.portfolio.theme
 
-  if (theme === 'terminal') return <TerminalTheme user={userData} portfolio={portfolioData} />
-  if (theme === 'creative') return <CreativeTheme user={userData} portfolio={portfolioData} />
-  return <MinimalTheme user={userData} portfolio={portfolioData} />
+  // BUG FIX: Client-side analytics tracking instead of server-side prisma.view.create()
+  const trackingScript = `
+    fetch('/api/analytics/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ portfolioId: '${user.portfolio.id}' })
+    }).catch(console.error);
+  `
+
+  let ThemeComponent = MinimalTheme
+  if (theme === 'terminal') ThemeComponent = TerminalTheme
+  if (theme === 'creative') ThemeComponent = CreativeTheme
+
+  return (
+    <>
+      <script dangerouslySetInnerHTML={{ __html: trackingScript }} />
+      <ThemeComponent user={userData} portfolio={portfolioData} />
+    </>
+  )
 }

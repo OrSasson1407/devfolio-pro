@@ -3,24 +3,52 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 export async function POST(req: Request) {
-  const session = await auth()
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-  const { bio, skills, theme, projects } = await req.json()
+    const { bio, skills, theme, projects } = await req.json()
 
-  const portfolio = await prisma.portfolio.update({
-    where: { userId: session.user.id },
-    data: { bio, skills, theme },
-  })
-
-  for (const p of projects) {
-    await prisma.project.update({
-      where: { id: p.id },
-      data: { order: p.order, featured: p.featured },
+    // WARNING FIX: Validate portfolio exists first to avoid Prisma throwing unhandled errors
+    const existingPortfolio = await prisma.portfolio.findUnique({
+      where: { userId: session.user.id },
     })
-  }
 
-  return NextResponse.json({ success: true })
+    if (!existingPortfolio) {
+      return NextResponse.json(
+        { error: 'Portfolio not found. Please sync with GitHub first.' },
+        { status: 404 }
+      )
+    }
+
+    const portfolio = await prisma.portfolio.update({
+      where: { id: existingPortfolio.id },
+      data: { bio, skills, theme },
+    })
+
+    // WARNING FIX: Validate project ownership to prevent authorization bypass risk
+    if (projects && Array.isArray(projects)) {
+      for (const p of projects) {
+        // Using updateMany allows us to securely filter by portfolioId 
+        // ensuring a user can't maliciously update someone else's project ID
+        await prisma.project.updateMany({
+          where: {
+            id: p.id,
+            portfolioId: portfolio.id, 
+          },
+          data: { order: p.order, featured: p.featured },
+        })
+      }
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (err: any) {
+    console.error('[portfolio/update] error:', err)
+    return NextResponse.json(
+      { error: err.message ?? 'Failed to update portfolio' },
+      { status: 500 }
+    )
+  }
 }

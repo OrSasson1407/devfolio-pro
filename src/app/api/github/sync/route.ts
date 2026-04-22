@@ -34,10 +34,13 @@ export async function POST(req: Request) {
 
     // 3. Get the GitHub username from the user record
     const user = await prisma.user.findUnique({ where: { id: userId } })
-    const username = user?.username ?? user?.name ?? ''
+    
+    // BUG FIX: Strictly use user.username. Fallback to user.name causes errors 
+    // with the GitHub API if user.name contains spaces.
+    const username = user?.username
 
     if (!username) {
-      return NextResponse.json({ error: 'Could not determine GitHub username' }, { status: 400 })
+      return NextResponse.json({ error: 'Could not determine GitHub username. You may need to sign out and sign back in.' }, { status: 400 })
     }
 
     // 4. Fetch everything from GitHub in parallel

@@ -8,7 +8,8 @@ import UpgradeButton from '@/components/dashboard/UpgradeButton'
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: { success?: string; canceled?: string }
+  // BUG FIX: searchParams is a Promise in Next.js 15+
+  searchParams: Promise<{ success?: string; canceled?: string }>
 }) {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
@@ -21,6 +22,9 @@ export default async function BillingPage({
   const isPro = user?.plan === 'PRO'
   const sub = user?.subscription
 
+  // BUG FIX: Await the searchParams Promise
+  const params = await searchParams
+
   return (
     <div className="max-w-3xl mx-auto space-y-8">
       <div>
@@ -29,12 +33,12 @@ export default async function BillingPage({
       </div>
 
       {/* Success / canceled banners */}
-      {searchParams.success && (
+      {params.success && (
         <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 text-green-400 text-sm">
           🎉 You are now on Pro! Enjoy unlimited access.
         </div>
       )}
-      {searchParams.canceled && (
+      {params.canceled && (
         <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 text-yellow-400 text-sm">
           Checkout canceled. You are still on the Free plan.
         </div>

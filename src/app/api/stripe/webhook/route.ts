@@ -23,18 +23,13 @@ export async function POST(req: Request) {
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
-        const session = event.data.object
+        const session = event.data.object as Stripe.Checkout.Session
         const userId = session.metadata?.userId
         const subscriptionId = session.subscription as string
 
         if (!userId) break
 
         const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-        const subData = subscription as unknown as {
-          status: string
-          current_period_end: number
-          items: { data: { price: { id: string } }[] }
-        }
 
         await prisma.user.update({
           where: { id: userId },
@@ -46,30 +41,25 @@ export async function POST(req: Request) {
           create: {
             userId,
             stripeSubId: subscriptionId,
-            stripePriceId: subData.items.data[0].price.id,
-            status: subData.status,
-            currentPeriodEnd: new Date(subData.current_period_end * 1000),
+            stripePriceId: subscription.items.data[0].price.id,
+            status: subscription.status,
+            currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
           },
           update: {
             stripeSubId: subscriptionId,
-            stripePriceId: subData.items.data[0].price.id,
-            status: subData.status,
-            currentPeriodEnd: new Date(subData.current_period_end * 1000),
+            stripePriceId: subscription.items.data[0].price.id,
+            status: subscription.status,
+            currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
           },
         })
         break
       }
 
       case 'customer.subscription.updated': {
-        const subscription = event.data.object
-        const subData = subscription as unknown as {
-          customer: string
-          status: string
-          current_period_end: number
-        }
+        const subscription = event.data.object as Stripe.Subscription
 
         const user = await prisma.user.findFirst({
-          where: { stripeId: subData.customer },
+          where: { stripeId: subscription.customer as string },
         })
 
         if (!user) break
@@ -77,22 +67,18 @@ export async function POST(req: Request) {
         await prisma.subscription.update({
           where: { userId: user.id },
           data: {
-            status: subData.status,
-            currentPeriodEnd: new Date(subData.current_period_end * 1000),
+            status: subscription.status,
+            currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
           },
         })
         break
       }
 
       case 'customer.subscription.deleted': {
-        const subscription = event.data.object
-        const subData = subscription as unknown as {
-          customer: string
-          status: string
-        }
+        const subscription = event.data.object as Stripe.Subscription
 
         const user = await prisma.user.findFirst({
-          where: { stripeId: subData.customer },
+          where: { stripeId: subscription.customer as string },
         })
 
         if (!user) break

@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -41,21 +42,23 @@ model VerificationToken {
 }
 
 model User {
-  id           String        @id @default(cuid())
-  githubId     String?       @unique
-  username     String?       @unique
-  name         String?
-  email        String?       @unique
-  emailVerified DateTime?
-  avatar       String?
-  image        String?
-  plan         Plan          @default(FREE)
-  stripeId     String?
-  createdAt    DateTime      @default(now())
-  accounts     Account[]
-  sessions     Session[]
-  portfolio    Portfolio?
-  subscription Subscription?
+  id               String        @id @default(cuid())
+  githubId         String?       @unique
+  username         String?       @unique
+  name             String?
+  email            String?       @unique
+  emailVerified    DateTime?
+  avatar           String?
+  image            String?
+  plan             Plan          @default(FREE)
+  stripeId         String?
+  aiCallsThisMonth Int           @default(0)   // WARNING FIX: Dedicated AI counter
+  aiCallsResetAt   DateTime?                   // WARNING FIX: Monthly reset date
+  createdAt        DateTime      @default(now())
+  accounts         Account[]
+  sessions         Session[]
+  portfolio        Portfolio?
+  subscription     Subscription?
 }
 
 model Portfolio {

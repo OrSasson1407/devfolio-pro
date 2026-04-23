@@ -18,19 +18,21 @@ export default async function DashboardPage() {
   if (!session?.user?.id) redirect('/login')
 
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    include: {
-      portfolio: {
-        include: {
-          projects: true,
-          views: true,
-        },
+  where: { id: session.user.id },
+  include: {
+    portfolio: {
+      include: {
+        projects: true,
+        _count: {
+          select: { views: true }
+        }
       },
     },
-  })
+  },
+})
 
   const portfolio = user?.portfolio
-  const totalViews = portfolio?.views.length ?? 0
+ const totalViews = portfolio?._count?.views ?? 0
   const totalProjects = portfolio?.projects.length ?? 0
   const featuredProjects = portfolio?.projects.filter(p => p.featured) ?? []
   const topLanguages = portfolio?.skills ?? []

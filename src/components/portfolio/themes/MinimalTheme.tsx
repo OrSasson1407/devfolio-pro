@@ -1,4 +1,5 @@
-import { Star, ExternalLink, MapPin, Users } from 'lucide-react'
+import { Star, ExternalLink, Globe } from 'lucide-react'
+import { FaGithub, FaLinkedin, FaTwitter } from 'react-icons/fa'
 
 interface Project {
   id: string
@@ -12,7 +13,15 @@ interface Project {
 
 interface Props {
   user: { name: string | null; avatar: string | null; username: string | null }
-  portfolio: { bio: string | null; skills: string[]; projects: Project[] }
+  portfolio: { 
+    bio: string | null; 
+    skills: string[]; 
+    twitter: string | null;
+    linkedin: string | null;
+    github: string | null;
+    website: string | null;
+    projects: Project[] 
+  }
 }
 
 export default function MinimalTheme({ user, portfolio }: Props) {
@@ -23,7 +32,7 @@ export default function MinimalTheme({ user, portfolio }: Props) {
       <div className="max-w-3xl mx-auto px-6 py-20 space-y-16">
 
         {/* Hero */}
-        <div className="flex items-center gap-6">
+        <div className="flex flex-col sm:flex-row items-start gap-6">
           {user.avatar && (
             <img src={user.avatar} alt={user.name ?? ''} className="w-20 h-20 rounded-full border-4 border-gray-100" />
           )}
@@ -31,6 +40,30 @@ export default function MinimalTheme({ user, portfolio }: Props) {
             <h1 className="text-3xl font-bold text-gray-900">{user.name}</h1>
             <p className="text-gray-500 mt-1">@{user.username}</p>
             {portfolio.bio && <p className="text-gray-700 mt-3 max-w-xl">{portfolio.bio}</p>}
+            
+            {/* Social Links */}
+            <div className="flex items-center gap-4 mt-4">
+              {portfolio.github && (
+                <a href={portfolio.github} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-gray-900 transition-colors">
+                  <FaGithub className="w-5 h-5" />
+                </a>
+              )}
+              {portfolio.linkedin && (
+                <a href={portfolio.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-600 transition-colors">
+                  <FaLinkedin className="w-5 h-5" />
+                </a>
+              )}
+              {portfolio.twitter && (
+                <a href={portfolio.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-sky-500 transition-colors">
+                  <FaTwitter className="w-5 h-5" />
+                </a>
+              )}
+              {portfolio.website && (
+                <a href={portfolio.website} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-emerald-600 transition-colors">
+                  <Globe className="w-5 h-5" />
+                </a>
+              )}
+            </div>
           </div>
         </div>
 

@@ -26,6 +26,13 @@ interface SkillsInput {
   projects: { language: string | null; name: string }[]
 }
 
+interface CoverLetterInput {
+  username: string
+  projects: any[] // flexible array to handle various DB project structures
+  skills: string[]
+  jobDescription: string
+}
+
 export async function generateBio({ username, projects, skills }: BioInput): Promise<string> {
   const message = await client.messages.create({
     model: OPUS_MODEL,
@@ -91,4 +98,37 @@ Return ONLY a comma-separated list. No explanation. Example: TypeScript, React, 
     .map((s) => s.trim())
     .filter(Boolean)
     .slice(0, 8)
+}
+
+export async function generateCoverLetter({ username, projects, skills, jobDescription }: CoverLetterInput): Promise<string> {
+  const projectNames = projects.map((p) => p.title || p.repoName || p.name).filter(Boolean).join(', ')
+
+  const message = await client.messages.create({
+    model: OPUS_MODEL,
+    max_tokens: 1000,
+    messages: [
+      {
+        role: 'user',
+        content: `You are an expert technical career coach. Write a professional, modern cover letter for ${username}. 
+  
+Job Description:
+${jobDescription}
+
+Candidate Skills:
+${skills.join(', ')}
+
+Candidate Featured Projects:
+${projectNames}
+
+Instructions:
+1. Write a confident, engaging cover letter that directly connects the candidate's skills and projects to the job description.
+2. Do not use generic filler. Mention specific projects or skills where relevant.
+3. Keep it under 4 paragraphs.
+4. Output ONLY the cover letter text, no preamble.`,
+      },
+    ],
+  })
+
+  const block = message.content[0]
+  return block.type === 'text' ? block.text : ''
 }

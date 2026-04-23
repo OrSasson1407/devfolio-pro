@@ -19,7 +19,8 @@ import {
 } from '@dnd-kit/sortable'
 import ProjectCard from './ProjectCard'
 import SkillBadge from './SkillBadge'
-import { Save, Sparkles } from 'lucide-react'
+import { Save, Sparkles, Globe } from 'lucide-react'
+import { FaGithub, FaLinkedin, FaTwitter } from 'react-icons/fa'
 
 interface Project {
   id: string
@@ -38,6 +39,12 @@ interface PortfolioEditorProps {
     bio: string | null
     skills: string[]
     theme: string
+    openToWork: boolean
+    contactEmail: string | null
+    twitter: string | null
+    linkedin: string | null
+    github: string | null
+    website: string | null
     projects: Project[]
   }
 }
@@ -49,6 +56,15 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
   const [bio, setBio] = useState(portfolio.bio ?? '')
   const [skills, setSkills] = useState<string[]>(portfolio.skills)
   const [theme, setTheme] = useState(portfolio.theme)
+  const [openToWork, setOpenToWork] = useState(portfolio.openToWork)
+  const [contactEmail, setContactEmail] = useState(portfolio.contactEmail ?? '')
+  
+  // Social Links state
+  const [twitter, setTwitter] = useState(portfolio.twitter ?? '')
+  const [linkedin, setLinkedin] = useState(portfolio.linkedin ?? '')
+  const [github, setGithub] = useState(portfolio.github ?? '')
+  const [website, setWebsite] = useState(portfolio.website ?? '')
+
   const [projects, setProjects] = useState<Project[]>(
     [...portfolio.projects].sort((a, b) => a.order - b.order)
   )
@@ -101,6 +117,12 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
           bio,
           skills,
           theme,
+          openToWork,
+          contactEmail,
+          twitter,
+          linkedin,
+          github,
+          website,
           projects: projects.map((p, index) => ({
             id: p.id,
             order: index,
@@ -172,6 +194,36 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
         </div>
       </div>
 
+      {/* Availability (Hire Me) */}
+      <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-4">
+        <h2 className="text-white font-semibold">Availability</h2>
+        <div className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            id="openToWork"
+            checked={openToWork}
+            onChange={(e) => setOpenToWork(e.target.checked)}
+            className="w-4 h-4 rounded border-gray-700 bg-gray-800 text-violet-600 focus:ring-violet-500 focus:ring-offset-gray-900"
+          />
+          <label htmlFor="openToWork" className="text-sm text-gray-300 cursor-pointer">
+            Show "Open to work" badge on my portfolio
+          </label>
+        </div>
+        
+        {openToWork && (
+          <div className="pt-2 animate-in fade-in slide-in-from-top-2 duration-200">
+            <label className="block text-sm text-gray-400 mb-1">Contact Email</label>
+            <input
+              type="email"
+              value={contactEmail}
+              onChange={(e) => setContactEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-violet-500"
+            />
+          </div>
+        )}
+      </div>
+
       {/* Bio */}
       <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-3">
         <div className="flex items-center justify-between">
@@ -192,6 +244,53 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
           placeholder="Write a short bio about yourself..."
           className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-violet-500 resize-none"
         />
+      </div>
+
+      {/* Social Links */}
+      <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-4">
+        <h2 className="text-white font-semibold">Social Links</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label className="text-sm text-gray-400 flex items-center gap-2"><FaGithub className="w-4 h-4" /> GitHub URL</label>
+            <input
+              type="url"
+              value={github}
+              onChange={(e) => setGithub(e.target.value)}
+              placeholder="https://github.com/yourusername"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-violet-500"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm text-gray-400 flex items-center gap-2"><FaLinkedin className="w-4 h-4" /> LinkedIn URL</label>
+            <input
+              type="url"
+              value={linkedin}
+              onChange={(e) => setLinkedin(e.target.value)}
+              placeholder="https://linkedin.com/in/yourusername"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-violet-500"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm text-gray-400 flex items-center gap-2"><FaTwitter className="w-4 h-4" /> Twitter/X URL</label>
+            <input
+              type="url"
+              value={twitter}
+              onChange={(e) => setTwitter(e.target.value)}
+              placeholder="https://twitter.com/yourusername"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-violet-500"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm text-gray-400 flex items-center gap-2"><Globe className="w-4 h-4" /> Personal Website</label>
+            <input
+              type="url"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              placeholder="https://yourwebsite.com"
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-violet-500"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Skills */}

@@ -11,12 +11,14 @@ import {
   LogOut,
   User,
   ExternalLink,
+  FileText
 } from 'lucide-react'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/editor', label: 'Editor', icon: Edit3 },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart2 },
+  { href: '/dashboard/cover-letter', label: 'Cover Letter', icon: FileText },
   { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
 ]
 

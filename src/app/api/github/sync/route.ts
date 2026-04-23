@@ -60,9 +60,11 @@ export async function POST(req: Request) {
         bio: profile.bio,
         skills: topLanguages,
         theme: 'minimal',
+        contributions: contributions as any,
       },
       update: {
         skills: topLanguages,
+        contributions: contributions as any,
       },
     })
 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { generateBio, generateProjectDescription, generateSkills } from '@/lib/ai'
+import { generateBio, generateProjectDescription, generateSkills, generateCoverLetter } from '@/lib/ai'
 
 const AI_LIMIT_FREE = 5
 
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
   }
 
   // BUG FIX (Carried over): Parse the request body exactly once
-  const { type, projects, skills, repoName, language, stars } = await req.json()
+  const { type, projects, skills, repoName, language, stars, jobDescription } = await req.json()
 
   try {
     if (type === 'bio') {
@@ -72,6 +72,21 @@ export async function POST(req: Request) {
     if (type === 'skills') {
       const suggestedSkills = await generateSkills({ projects: projects ?? [] })
       return NextResponse.json({ skills: suggestedSkills })
+    }
+
+    if (type === 'cover-letter') {
+      if (!jobDescription) {
+        return NextResponse.json({ error: 'Job description is required' }, { status: 400 })
+      }
+      
+      const coverLetter = await generateCoverLetter({
+        username: user.name || user.username || 'Developer',
+        projects: projects ?? user.portfolio?.projects ?? [],
+        skills: skills ?? user.portfolio?.skills ?? [],
+        jobDescription
+      })
+      
+      return NextResponse.json({ coverLetter })
     }
 
     return NextResponse.json({ error: 'Unknown type' }, { status: 400 })

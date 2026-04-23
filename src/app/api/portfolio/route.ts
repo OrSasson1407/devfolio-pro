@@ -9,7 +9,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { bio, skills, theme, projects } = await req.json()
+    const { 
+      bio, 
+      skills, 
+      theme, 
+      openToWork, 
+      contactEmail,
+      twitter,
+      linkedin,
+      github,
+      website, 
+      projects 
+    } = await req.json()
 
     // WARNING FIX: Validate portfolio exists first to avoid Prisma throwing unhandled errors
     const existingPortfolio = await prisma.portfolio.findUnique({
@@ -25,7 +36,17 @@ export async function POST(req: Request) {
 
     const portfolio = await prisma.portfolio.update({
       where: { id: existingPortfolio.id },
-      data: { bio, skills, theme },
+      data: { 
+        bio, 
+        skills, 
+        theme, 
+        openToWork, 
+        contactEmail,
+        twitter,
+        linkedin,
+        github,
+        website 
+      },
     })
 
     // WARNING FIX: Validate project ownership to prevent authorization bypass risk

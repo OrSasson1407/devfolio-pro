@@ -16,6 +16,9 @@ export default async function Navbar() {
         </Link>
 
         <div className="flex items-center gap-6">
+          <Link href="/discover" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
+            Discover
+          </Link>
           <Link href="#features" className="text-sm font-medium text-gray-300 hover:text-white transition-colors">
             Features
           </Link>

@@ -8,7 +8,8 @@ import {
   Star,
   Zap,
   ArrowRight,
-  RefreshCw,
+  Gift,
+  Copy
 } from 'lucide-react'
 import SyncButton from '@/components/dashboard/SyncButton'
 
@@ -33,6 +34,12 @@ export default async function DashboardPage() {
   const totalProjects = portfolio?.projects.length ?? 0
   const featuredProjects = portfolio?.projects.filter(p => p.featured) ?? []
   const topLanguages = portfolio?.skills ?? []
+
+  // Ensure absolute URL based on environment
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  
+  // FIX: Bypass TS Cache for referral fields
+  const referralLink = `${baseUrl}?ref=${(user as any)?.referralCode}`
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -69,6 +76,38 @@ export default async function DashboardPage() {
           value={portfolio?.projects.reduce((a, p) => a + p.stars, 0) ?? 0}
           bg="bg-yellow-500/10"
         />
+      </div>
+
+      {/* Referral Widget */}
+      <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="flex items-start gap-4">
+          <div className="bg-emerald-500/10 p-3 rounded-xl shrink-0 mt-1">
+            <Gift className="w-6 h-6 text-emerald-400" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-white">Earn Free Pro Months</h2>
+            <p className="text-gray-400 text-sm mt-1 max-w-md">
+              Share your unique link. When a friend signs up and upgrades to Pro, your next billing cycle is completely free.
+            </p>
+            <div className="mt-3 flex items-center gap-2">
+              <span className="text-sm font-semibold text-white">Credits Earned:</span>
+              <span className="bg-gray-800 text-emerald-400 font-bold px-2 py-0.5 rounded text-sm">
+                {/* FIX: Bypass TS Cache */}
+                {(user as any)?.referralCredits || 0}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="w-full md:w-auto relative group">
+          <input 
+            readOnly 
+            value={referralLink} 
+            className="w-full md:w-72 bg-gray-950 border border-gray-700 text-gray-300 text-sm rounded-lg px-4 py-3 pr-12 focus:outline-none"
+          />
+          <button className="absolute right-2 top-2 p-1.5 text-gray-400 hover:text-white transition-colors bg-gray-800 rounded-md">
+            <Copy className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* No portfolio yet */}

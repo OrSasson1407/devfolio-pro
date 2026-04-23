@@ -6,9 +6,10 @@ interface PricingCardProps {
   price: number
   features: string[]
   isPro?: boolean
+  interval?: 'month' | 'year' // NEW
 }
 
-export default function PricingCard({ name, price, features, isPro }: PricingCardProps) {
+export default function PricingCard({ name, price, features, isPro, interval = 'month' }: PricingCardProps) {
   return (
     <div className={`p-8 rounded-2xl border bg-gray-900 flex flex-col h-full ${
       isPro ? 'border-violet-500 shadow-[0_0_30px_-5px_rgba(139,92,246,0.3)]' : 'border-gray-800'
@@ -21,7 +22,7 @@ export default function PricingCard({ name, price, features, isPro }: PricingCar
       <h3 className="text-xl font-bold text-white">{name}</h3>
       <div className="mt-4 flex items-baseline text-5xl font-extrabold text-white">
         ${price}
-        <span className="ml-1 text-xl font-medium text-gray-500">/mo</span>
+        <span className="ml-1 text-xl font-medium text-gray-500">/{interval === 'year' ? 'yr' : 'mo'}</span>
       </div>
       
       <ul className="mt-8 space-y-4 flex-1">

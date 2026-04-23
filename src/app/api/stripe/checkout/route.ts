@@ -9,6 +9,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // NEW: Read the billing interval from the request body
+  let interval = 'month'
+  try {
+    const body = await req.json()
+    if (body.interval === 'year') interval = 'year'
+  } catch (e) {
+    // Fallback to month if body is empty or fails to parse
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
   })
@@ -18,7 +27,6 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Create or retrieve Stripe customer
     let customerId = user.stripeId
 
     if (!customerId) {
@@ -35,14 +43,18 @@ export async function POST(req: Request) {
       })
     }
 
-    // Create checkout session
+    // NEW: Select the correct Price ID based on the toggle!
+    const priceId = interval === 'year' 
+      ? process.env.STRIPE_PRO_ANNUAL_PRICE_ID! 
+      : process.env.STRIPE_PRO_PRICE_ID!
+
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
       payment_method_types: ['card'],
       line_items: [
         {
-          price: process.env.STRIPE_PRO_PRICE_ID!,
+          price: priceId,
           quantity: 1,
         },
       ],

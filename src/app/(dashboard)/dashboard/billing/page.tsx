@@ -2,14 +2,14 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { PLANS } from '@/lib/stripe'
-import { Check, Zap } from 'lucide-react'
+import { Check } from 'lucide-react'
+import Link from 'next/link'
 import UpgradeButton from '@/components/dashboard/UpgradeButton'
 
 export default async function BillingPage({
   searchParams,
 }: {
-  // BUG FIX: searchParams is a Promise in Next.js 15+
-  searchParams: Promise<{ success?: string; canceled?: string }>
+  searchParams: Promise<{ success?: string; canceled?: string; interval?: string }>
 }) {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
@@ -22,8 +22,10 @@ export default async function BillingPage({
   const isPro = user?.plan === 'PRO'
   const sub = user?.subscription
 
-  // BUG FIX: Await the searchParams Promise
   const params = await searchParams
+  
+  // NEW: Detect interval from URL
+  const isAnnual = params.interval === 'year'
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
@@ -32,7 +34,6 @@ export default async function BillingPage({
         <p className="text-gray-400 mt-1">Manage your plan and subscription.</p>
       </div>
 
-      {/* Success / canceled banners */}
       {params.success && (
         <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 text-green-400 text-sm">
           🎉 You are now on Pro! Enjoy unlimited access.
@@ -44,7 +45,6 @@ export default async function BillingPage({
         </div>
       )}
 
-      {/* Current plan */}
       <div className="bg-gray-900 rounded-xl border border-gray-800 p-6">
         <h2 className="text-white font-semibold mb-4">Current Plan</h2>
         <div className="flex items-center gap-3">
@@ -59,10 +59,30 @@ export default async function BillingPage({
         </div>
       </div>
 
-      {/* Plans */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      {/* NEW: The Monthly / Annual Toggle Switch */}
+      {!isPro && (
+        <div className="flex justify-center mt-8 mb-2">
+          <div className="bg-gray-900 p-1.5 rounded-xl border border-gray-800 flex items-center">
+            <Link 
+              href="?interval=month" 
+              className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${!isAnnual ? 'bg-violet-600 text-white shadow-lg' : 'text-gray-400 hover:text-gray-200'}`}
+            >
+              Monthly
+            </Link>
+            <Link 
+              href="?interval=year" 
+              className={`px-6 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${isAnnual ? 'bg-violet-600 text-white shadow-lg' : 'text-gray-400 hover:text-gray-200'}`}
+            >
+              Annually 
+              <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase tracking-wider font-bold ${isAnnual ? 'bg-white/20 text-white' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                2 Months Free
+              </span>
+            </Link>
+          </div>
+        </div>
+      )}
 
-        {/* Free plan */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <div className={`bg-gray-900 rounded-xl border p-6 space-y-4 ${!isPro ? 'border-violet-500' : 'border-gray-800'}`}>
           <div>
             <h3 className="text-white font-bold text-lg">Free</h3>
@@ -83,14 +103,17 @@ export default async function BillingPage({
           )}
         </div>
 
-        {/* Pro plan */}
-        <div className={`bg-gray-900 rounded-xl border p-6 space-y-4 ${isPro ? 'border-violet-500' : 'border-gray-800'}`}>
+        <div className={`bg-gray-900 rounded-xl border p-6 space-y-4 ${isPro ? 'border-violet-500 shadow-[0_0_30px_-5px_rgba(139,92,246,0.15)]' : 'border-gray-800'}`}>
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-white font-bold text-lg">Pro</h3>
               <span className="bg-violet-600 text-white text-xs px-2 py-0.5 rounded-full">Popular</span>
             </div>
-            <p className="text-3xl font-black text-white mt-1">$9<span className="text-gray-500 text-base font-normal">/mo</span></p>
+            {/* NEW: Dynamically update price based on toggle */}
+            <p className="text-3xl font-black text-white mt-1">
+              ${isAnnual ? '90' : '9'}
+              <span className="text-gray-500 text-base font-normal">/{isAnnual ? 'yr' : 'mo'}</span>
+            </p>
           </div>
           <ul className="space-y-2">
             {PLANS.PRO.features.map((f) => (
@@ -104,7 +127,8 @@ export default async function BillingPage({
             {isPro ? (
               <span className="text-sm text-violet-400 font-medium">Current plan</span>
             ) : (
-              <UpgradeButton />
+              /* NEW: Pass the interval into the button! */
+              <UpgradeButton interval={isAnnual ? 'year' : 'month'} />
             )}
           </div>
         </div>

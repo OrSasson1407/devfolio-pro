@@ -13,8 +13,10 @@ export async function POST(req: Request) {
       bio, 
       skills, 
       theme, 
-      openToWork, 
+      openToWork,
+      isPublicDirectory, 
       contactEmail,
+      webhookUrl, // NEW
       twitter,
       linkedin,
       github,
@@ -23,7 +25,6 @@ export async function POST(req: Request) {
       projects 
     } = await req.json()
 
-    // Validate portfolio exists first to avoid Prisma throwing unhandled errors
     const existingPortfolio = await prisma.portfolio.findUnique({
       where: { userId: session.user.id },
     })
@@ -42,7 +43,9 @@ export async function POST(req: Request) {
         skills, 
         theme, 
         openToWork, 
+        isPublicDirectory, 
         contactEmail,
+        webhookUrl, // NEW
         twitter,
         linkedin,
         github,
@@ -51,7 +54,6 @@ export async function POST(req: Request) {
       },
     })
 
-    // Validate project ownership to prevent authorization bypass risk
     if (projects && Array.isArray(projects)) {
       for (const p of projects) {
         await prisma.project.updateMany({
@@ -59,7 +61,7 @@ export async function POST(req: Request) {
             id: p.id,
             portfolioId: portfolio.id, 
           },
-          data: { order: p.order, featured: p.featured, demoUrl: p.demoUrl }, // NEW: Save demoUrl
+          data: { order: p.order, featured: p.featured, demoUrl: p.demoUrl }, 
         })
       }
     }

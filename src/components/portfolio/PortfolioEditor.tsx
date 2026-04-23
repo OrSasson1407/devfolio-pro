@@ -19,7 +19,7 @@ import {
 } from '@dnd-kit/sortable'
 import ProjectCard from './ProjectCard'
 import SkillBadge from './SkillBadge'
-import { Save, Sparkles, Globe, Zap, Plus, Trash2 } from 'lucide-react'
+import { Save, Sparkles, Globe, Zap, Plus, Trash2, Webhook } from 'lucide-react'
 import { FaGithub, FaLinkedin, FaTwitter } from 'react-icons/fa'
 
 interface Project {
@@ -31,7 +31,7 @@ interface Project {
   url: string
   featured: boolean
   order: number
-  demoUrl?: string | null // NEW
+  demoUrl?: string | null
 }
 
 interface CustomSectionItem {
@@ -55,7 +55,9 @@ interface PortfolioEditorProps {
     skills: string[]
     theme: string
     openToWork: boolean
+    isPublicDirectory: boolean 
     contactEmail: string | null
+    webhookUrl: string | null // NEW
     twitter: string | null
     linkedin: string | null
     github: string | null
@@ -73,7 +75,9 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
   const [skills, setSkills] = useState<string[]>(portfolio.skills)
   const [theme, setTheme] = useState(portfolio.theme)
   const [openToWork, setOpenToWork] = useState(portfolio.openToWork)
+  const [isPublicDirectory, setIsPublicDirectory] = useState(portfolio.isPublicDirectory ?? false) 
   const [contactEmail, setContactEmail] = useState(portfolio.contactEmail ?? '')
+  const [webhookUrl, setWebhookUrl] = useState(portfolio.webhookUrl ?? '') // NEW
 
   const [twitter, setTwitter] = useState(portfolio.twitter ?? '')
   const [linkedin, setLinkedin] = useState(portfolio.linkedin ?? '')
@@ -116,7 +120,6 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
     )
   }
 
-  // NEW: Handle demoUrl updates
   function handleUpdateDemoUrl(id: string, newUrl: string) {
     setProjects((prev) =>
       prev.map((p) => (p.id === id ? { ...p, demoUrl: newUrl } : p))
@@ -212,7 +215,9 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
           skills,
           theme,
           openToWork,
+          isPublicDirectory, 
           contactEmail,
+          webhookUrl, // NEW
           twitter,
           linkedin,
           github,
@@ -222,7 +227,7 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
             id: p.id,
             order: index,
             featured: p.featured,
-            demoUrl: p.demoUrl, // NEW
+            demoUrl: p.demoUrl, 
           })),
         }),
       })
@@ -310,10 +315,27 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
         </div>
       </div>
 
-      {/* Availability (Hire Me) */}
+      {/* Visibility & Availability */}
       <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-4">
-        <h2 className="text-white font-semibold">Availability</h2>
-        <div className="flex items-center gap-3">
+        <h2 className="text-white font-semibold">Visibility & Availability</h2>
+        
+        <div className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            id="isPublicDirectory"
+            checked={isPublicDirectory}
+            onChange={(e) => setIsPublicDirectory(e.target.checked)}
+            className="mt-1 w-4 h-4 rounded border-gray-700 bg-gray-800 text-violet-600 focus:ring-violet-500 focus:ring-offset-gray-900"
+          />
+          <div>
+            <label htmlFor="isPublicDirectory" className="text-sm text-gray-300 cursor-pointer font-medium">
+              List my portfolio on the public <span className="text-violet-400">/discover</span> directory
+            </label>
+            <p className="text-xs text-gray-500 mt-0.5">Allow recruiters and other developers to find your portfolio organically.</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 pt-2">
           <input
             type="checkbox"
             id="openToWork"
@@ -338,6 +360,27 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
             />
           </div>
         )}
+      </div>
+
+      {/* NEW: Integrations & Webhooks */}
+      <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-3">
+        <div className="flex items-center gap-2">
+          <Webhook className="w-5 h-5 text-violet-400" />
+          <h2 className="text-white font-semibold">Integrations (Power Users)</h2>
+        </div>
+        <p className="text-sm text-gray-400">
+          Fire a webhook whenever someone views your portfolio. Great for piping analytics into Slack, Discord, Notion, or Zapier.
+        </p>
+        <div className="pt-2">
+          <label className="block text-sm text-gray-400 mb-1">Webhook URL</label>
+          <input
+            type="url"
+            value={webhookUrl}
+            onChange={(e) => setWebhookUrl(e.target.value)}
+            placeholder="https://hooks.zapier.com/hooks/catch/..."
+            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm placeholder-gray-500 focus:outline-none focus:border-violet-500"
+          />
+        </div>
       </div>
 
       {/* Hero Tagline */}
@@ -475,7 +518,7 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
         </div>
       </div>
 
-      {/* Custom Sections (Work Experience, Education, etc.) */}
+      {/* Custom Sections */}
       <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-5">
         <div className="flex items-center justify-between">
           <div>
@@ -493,7 +536,6 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
         <div className="space-y-6">
           {customSections.map((section) => (
             <div key={section.id} className="bg-gray-950 border border-gray-800 rounded-xl p-5 space-y-4">
-              {/* Section Header */}
               <div className="flex items-center gap-3">
                 <input
                   type="text"
@@ -511,7 +553,6 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
                 </button>
               </div>
 
-              {/* Section Items */}
               <div className="space-y-3 pl-2 border-l-2 border-gray-800">
                 {section.items.map((item) => (
                   <div key={item.id} className="bg-gray-900 rounded-lg p-4 relative group border border-gray-800">
@@ -582,7 +623,7 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
                   key={project.id}
                   project={project}
                   onToggleFeatured={handleToggleFeatured}
-                  onUpdateDemoUrl={handleUpdateDemoUrl} // NEW: Pass handler down
+                  onUpdateDemoUrl={handleUpdateDemoUrl} 
                 />
               ))}
             </div>

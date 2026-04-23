@@ -17,13 +17,48 @@ export async function generateMetadata({ params }: Props) {
 
   const user = await prisma.user.findUnique({
     where: { username },
+    include: { portfolio: true }
   })
 
-  if (!user) return { title: 'Not Found' }
+  if (!user || !user.portfolio) return { title: 'Not Found' }
+
+  const name = user.name ?? user.username ?? 'Developer'
+  const image = user.avatar ?? user.image ?? ''
+  const bio = user.portfolio.bio ?? `Check out ${name}'s developer portfolio`
+  
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  
+  const ogUrl = new URL(`${appUrl}/api/og`)
+  ogUrl.searchParams.set('name', name)
+  ogUrl.searchParams.set('username', username)
+  if (image) ogUrl.searchParams.set('image', image)
+
+  const ogImageUrl = ogUrl.toString()
 
   return {
-    title: `${user.name ?? user.username} — DevFolio Pro`,
-    description: `Check out ${user.name ?? user.username}'s developer portfolio`,
+    title: `${name} — DevFolio Pro`,
+    description: bio,
+    openGraph: {
+      title: `${name} — DevFolio Pro`,
+      description: bio,
+      url: `${appUrl}/${username}`,
+      siteName: 'DevFolio Pro',
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: `${name}'s Portfolio`,
+        },
+      ],
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${name} — DevFolio Pro`,
+      description: bio,
+      images: [ogImageUrl],
+    },
   }
 }
 
@@ -45,11 +80,11 @@ export default async function PublicPortfolioPage({ params }: Props) {
 
   if (!user || !user.portfolio) notFound()
 
-  // UPDATE: We cast to `any` to bypass the stubborn VS Code TS cache.
-  // We also added `contributions` to feed the heatmap component!
+  // FIX: Added contactEmail to the payload
   const portfolioData = {
     bio: user.portfolio.bio,
     skills: user.portfolio.skills,
+    contactEmail: user.portfolio.contactEmail, 
     twitter: user.portfolio.twitter,
     linkedin: user.portfolio.linkedin,
     github: user.portfolio.github,

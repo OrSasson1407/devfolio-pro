@@ -13,12 +13,15 @@ import {
   ExternalLink,
   FileText,
   Sparkles,
+  Users // NEW
 } from 'lucide-react'
 
+// NEW: Added the Team navigation item
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/editor', label: 'Editor', icon: Edit3 },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart2 },
+  { href: '/dashboard/team', label: 'Team', icon: Users },
   { href: '/dashboard/ai-tools', label: 'AI Tools', icon: Sparkles },
   { href: '/dashboard/cover-letter', label: 'Cover Letter', icon: FileText },
   { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },

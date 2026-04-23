@@ -19,7 +19,7 @@ import {
 } from '@dnd-kit/sortable'
 import ProjectCard from './ProjectCard'
 import SkillBadge from './SkillBadge'
-import { Save, Sparkles, Globe, Zap } from 'lucide-react'
+import { Save, Sparkles, Globe, Zap, Plus, Trash2 } from 'lucide-react'
 import { FaGithub, FaLinkedin, FaTwitter } from 'react-icons/fa'
 
 interface Project {
@@ -31,6 +31,21 @@ interface Project {
   url: string
   featured: boolean
   order: number
+  demoUrl?: string | null // NEW
+}
+
+interface CustomSectionItem {
+  id: string
+  title: string
+  subtitle: string
+  date: string
+  description: string
+}
+
+interface CustomSection {
+  id: string
+  title: string
+  items: CustomSectionItem[]
 }
 
 interface PortfolioEditorProps {
@@ -45,11 +60,12 @@ interface PortfolioEditorProps {
     linkedin: string | null
     github: string | null
     website: string | null
+    customSections: any 
     projects: Project[]
   }
 }
 
-const THEMES = ['minimal', 'terminal', 'creative']
+const THEMES = ['minimal', 'terminal', 'creative', 'pastel', 'corporate', 'glassmorphism']
 
 export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
   const router = useRouter()
@@ -59,11 +75,14 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
   const [openToWork, setOpenToWork] = useState(portfolio.openToWork)
   const [contactEmail, setContactEmail] = useState(portfolio.contactEmail ?? '')
 
-  // Social Links state
   const [twitter, setTwitter] = useState(portfolio.twitter ?? '')
   const [linkedin, setLinkedin] = useState(portfolio.linkedin ?? '')
   const [github, setGithub] = useState(portfolio.github ?? '')
   const [website, setWebsite] = useState(portfolio.website ?? '')
+
+  const [customSections, setCustomSections] = useState<CustomSection[]>(
+    Array.isArray(portfolio.customSections) ? portfolio.customSections : []
+  )
 
   const [projects, setProjects] = useState<Project[]>(
     [...portfolio.projects].sort((a, b) => a.order - b.order)
@@ -97,6 +116,13 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
     )
   }
 
+  // NEW: Handle demoUrl updates
+  function handleUpdateDemoUrl(id: string, newUrl: string) {
+    setProjects((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, demoUrl: newUrl } : p))
+    )
+  }
+
   function addSkill() {
     const trimmed = newSkill.trim()
     if (trimmed && !skills.includes(trimmed)) {
@@ -107,6 +133,72 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
 
   function removeSkill(skill: string) {
     setSkills((prev) => prev.filter((s) => s !== skill))
+  }
+
+  function addSection() {
+    setCustomSections((prev) => [
+      ...prev,
+      { id: Date.now().toString(), title: 'New Section (e.g. Work Experience)', items: [] },
+    ])
+  }
+
+  function updateSectionTitle(sectionId: string, title: string) {
+    setCustomSections((prev) =>
+      prev.map((sec) => (sec.id === sectionId ? { ...sec, title } : sec))
+    )
+  }
+
+  function removeSection(sectionId: string) {
+    setCustomSections((prev) => prev.filter((sec) => sec.id !== sectionId))
+  }
+
+  function addSectionItem(sectionId: string) {
+    setCustomSections((prev) =>
+      prev.map((sec) => {
+        if (sec.id === sectionId) {
+          return {
+            ...sec,
+            items: [
+              ...sec.items,
+              { id: Date.now().toString(), title: '', subtitle: '', date: '', description: '' },
+            ],
+          }
+        }
+        return sec
+      })
+    )
+  }
+
+  function updateSectionItem(
+    sectionId: string,
+    itemId: string,
+    field: keyof CustomSectionItem,
+    value: string
+  ) {
+    setCustomSections((prev) =>
+      prev.map((sec) => {
+        if (sec.id === sectionId) {
+          return {
+            ...sec,
+            items: sec.items.map((item) =>
+              item.id === itemId ? { ...item, [field]: value } : item
+            ),
+          }
+        }
+        return sec
+      })
+    )
+  }
+
+  function removeSectionItem(sectionId: string, itemId: string) {
+    setCustomSections((prev) =>
+      prev.map((sec) => {
+        if (sec.id === sectionId) {
+          return { ...sec, items: sec.items.filter((item) => item.id !== itemId) }
+        }
+        return sec
+      })
+    )
   }
 
   async function handleSave() {
@@ -125,10 +217,12 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
           linkedin,
           github,
           website,
+          customSections,
           projects: projects.map((p, index) => ({
             id: p.id,
             order: index,
             featured: p.featured,
+            demoUrl: p.demoUrl, // NEW
           })),
         }),
       })
@@ -199,7 +293,7 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
       {/* Theme picker */}
       <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-3">
         <h2 className="text-white font-semibold">Theme</h2>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           {THEMES.map((t) => (
             <button
               key={t}
@@ -381,6 +475,94 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
         </div>
       </div>
 
+      {/* Custom Sections (Work Experience, Education, etc.) */}
+      <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-white font-semibold">Custom Sections</h2>
+            <p className="text-gray-400 text-sm">Add Work Experience, Education, Certifications, etc.</p>
+          </div>
+          <button
+            onClick={addSection}
+            className="flex items-center gap-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white text-sm px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" /> Add Section
+          </button>
+        </div>
+
+        <div className="space-y-6">
+          {customSections.map((section) => (
+            <div key={section.id} className="bg-gray-950 border border-gray-800 rounded-xl p-5 space-y-4">
+              {/* Section Header */}
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  value={section.title}
+                  onChange={(e) => updateSectionTitle(section.id, e.target.value)}
+                  placeholder="Section Title (e.g. Work Experience)"
+                  className="flex-1 bg-transparent border-b border-gray-700 hover:border-gray-500 focus:border-violet-500 px-2 py-1 text-white font-semibold focus:outline-none transition-colors"
+                />
+                <button
+                  onClick={() => removeSection(section.id)}
+                  className="text-gray-500 hover:text-red-400 p-1 transition-colors"
+                  title="Remove Section"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Section Items */}
+              <div className="space-y-3 pl-2 border-l-2 border-gray-800">
+                {section.items.map((item) => (
+                  <div key={item.id} className="bg-gray-900 rounded-lg p-4 relative group border border-gray-800">
+                    <button
+                      onClick={() => removeSectionItem(section.id, item.id)}
+                      className="absolute top-3 right-3 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 pr-8">
+                      <input
+                        placeholder="Title (e.g. Senior Developer)"
+                        value={item.title}
+                        onChange={(e) => updateSectionItem(section.id, item.id, 'title', e.target.value)}
+                        className="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-white text-sm focus:border-violet-500 focus:outline-none"
+                      />
+                      <input
+                        placeholder="Subtitle (e.g. Google)"
+                        value={item.subtitle}
+                        onChange={(e) => updateSectionItem(section.id, item.id, 'subtitle', e.target.value)}
+                        className="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-white text-sm focus:border-violet-500 focus:outline-none"
+                      />
+                      <input
+                        placeholder="Date (e.g. 2021 - Present)"
+                        value={item.date}
+                        onChange={(e) => updateSectionItem(section.id, item.id, 'date', e.target.value)}
+                        className="bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-white text-sm focus:border-violet-500 focus:outline-none sm:col-span-2"
+                      />
+                    </div>
+                    <textarea
+                      placeholder="Description / Accomplishments"
+                      value={item.description}
+                      onChange={(e) => updateSectionItem(section.id, item.id, 'description', e.target.value)}
+                      rows={2}
+                      className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-white text-sm focus:border-violet-500 focus:outline-none resize-none"
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={() => addSectionItem(section.id)}
+                className="text-sm text-violet-400 hover:text-violet-300 flex items-center gap-1 mt-2 transition-colors"
+              >
+                <Plus className="w-3 h-3" /> Add Item
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Projects */}
       <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-3">
         <h2 className="text-white font-semibold">Projects</h2>
@@ -400,6 +582,7 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
                   key={project.id}
                   project={project}
                   onToggleFeatured={handleToggleFeatured}
+                  onUpdateDemoUrl={handleUpdateDemoUrl} // NEW: Pass handler down
                 />
               ))}
             </div>

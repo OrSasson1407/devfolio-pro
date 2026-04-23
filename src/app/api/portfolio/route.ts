@@ -18,11 +18,12 @@ export async function POST(req: Request) {
       twitter,
       linkedin,
       github,
-      website, 
+      website,
+      customSections, 
       projects 
     } = await req.json()
 
-    // WARNING FIX: Validate portfolio exists first to avoid Prisma throwing unhandled errors
+    // Validate portfolio exists first to avoid Prisma throwing unhandled errors
     const existingPortfolio = await prisma.portfolio.findUnique({
       where: { userId: session.user.id },
     })
@@ -45,21 +46,20 @@ export async function POST(req: Request) {
         twitter,
         linkedin,
         github,
-        website 
+        website,
+        customSections 
       },
     })
 
-    // WARNING FIX: Validate project ownership to prevent authorization bypass risk
+    // Validate project ownership to prevent authorization bypass risk
     if (projects && Array.isArray(projects)) {
       for (const p of projects) {
-        // Using updateMany allows us to securely filter by portfolioId 
-        // ensuring a user can't maliciously update someone else's project ID
         await prisma.project.updateMany({
           where: {
             id: p.id,
             portfolioId: portfolio.id, 
           },
-          data: { order: p.order, featured: p.featured },
+          data: { order: p.order, featured: p.featured, demoUrl: p.demoUrl }, // NEW: Save demoUrl
         })
       }
     }

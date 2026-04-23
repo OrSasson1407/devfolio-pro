@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma'
 import MinimalTheme from '@/components/portfolio/themes/MinimalTheme'
 import TerminalTheme from '@/components/portfolio/themes/TerminalTheme'
 import CreativeTheme from '@/components/portfolio/themes/CreativeTheme'
+import PastelTheme from '@/components/portfolio/themes/PastelTheme'
+import CorporateTheme from '@/components/portfolio/themes/CorporateTheme'
+import GlassmorphismTheme from '@/components/portfolio/themes/GlassmorphismTheme'
 import PortfolioTracker from '@/components/portfolio/PortfolioTracker'
 
 interface Props {
@@ -42,9 +45,17 @@ export default async function PublicPortfolioPage({ params }: Props) {
 
   if (!user || !user.portfolio) notFound()
 
+  // UPDATE: We cast to `any` to bypass the stubborn VS Code TS cache.
+  // We also added `contributions` to feed the heatmap component!
   const portfolioData = {
     bio: user.portfolio.bio,
     skills: user.portfolio.skills,
+    twitter: user.portfolio.twitter,
+    linkedin: user.portfolio.linkedin,
+    github: user.portfolio.github,
+    website: user.portfolio.website,
+    customSections: (user.portfolio as any).customSections,
+    contributions: (user.portfolio as any).contributions, 
     projects: user.portfolio.projects,
   }
 
@@ -59,10 +70,12 @@ export default async function PublicPortfolioPage({ params }: Props) {
   let ThemeComponent = MinimalTheme
   if (theme === 'terminal') ThemeComponent = TerminalTheme
   if (theme === 'creative') ThemeComponent = CreativeTheme
+  if (theme === 'pastel') ThemeComponent = PastelTheme
+  if (theme === 'corporate') ThemeComponent = CorporateTheme
+  if (theme === 'glassmorphism') ThemeComponent = GlassmorphismTheme
 
   return (
     <>
-      {/* Safe client component — no dangerouslySetInnerHTML, no XSS risk */}
       <PortfolioTracker username={username} />
       <ThemeComponent user={userData} portfolio={portfolioData} />
     </>

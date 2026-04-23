@@ -1,5 +1,6 @@
-import { Star, ExternalLink, Globe } from 'lucide-react'
+import { Star, ExternalLink, Globe, MonitorPlay } from 'lucide-react'
 import { FaGithub, FaLinkedin, FaTwitter } from 'react-icons/fa'
+import ContributionHeatmap from '../ContributionHeatmap'
 
 interface Project {
   id: string
@@ -9,6 +10,21 @@ interface Project {
   stars: number
   url: string
   featured: boolean
+  demoUrl?: string | null // NEW
+}
+
+interface CustomSectionItem {
+  id: string
+  title: string
+  subtitle: string
+  date: string
+  description: string
+}
+
+interface CustomSection {
+  id: string
+  title: string
+  items: CustomSectionItem[]
 }
 
 interface Props {
@@ -20,12 +36,17 @@ interface Props {
     linkedin: string | null;
     github: string | null;
     website: string | null;
+    customSections: any; 
+    contributions: any; 
     projects: Project[] 
   }
 }
 
 export default function MinimalTheme({ user, portfolio }: Props) {
   const featured = portfolio.projects.filter((p) => p.featured)
+  const sections: CustomSection[] = Array.isArray(portfolio.customSections) 
+    ? portfolio.customSections 
+    : []
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans">
@@ -81,31 +102,100 @@ export default function MinimalTheme({ user, portfolio }: Props) {
           </div>
         )}
 
-        {/* Projects */}
+        {/* Custom Sections (Work, Education, etc.) */}
+        {sections.length > 0 && (
+          <div className="space-y-12">
+            {sections.map((section) => (
+              <div key={section.id}>
+                <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-6">{section.title}</h2>
+                <div className="space-y-8">
+                  {section.items.map((item) => (
+                    <div key={item.id} className="relative pl-6 before:absolute before:left-0 before:top-2 before:bottom-0 before:w-[2px] before:bg-gray-100">
+                      {/* Timeline dot */}
+                      <span className="absolute left-[-3px] top-2 w-2 h-2 rounded-full bg-gray-300 ring-4 ring-white" />
+                      
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-4">
+                        <h3 className="font-semibold text-gray-900">{item.title}</h3>
+                        {item.date && (
+                          <span className="text-sm text-gray-400 whitespace-nowrap">{item.date}</span>
+                        )}
+                      </div>
+                      {item.subtitle && <p className="text-sm font-medium text-gray-600 mt-0.5">{item.subtitle}</p>}
+                      {item.description && <p className="text-sm text-gray-500 mt-2 whitespace-pre-wrap">{item.description}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Projects (UPDATED: Now contains embedded iframe support) */}
         {featured.length > 0 && (
           <div>
             <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">Projects</h2>
-            <div className="space-y-4">
+            <div className="space-y-6">
               {featured.map((project) => (
-                <a key={project.id} href={project.url} target="_blank" rel="noopener noreferrer"
-                  className="block border border-gray-200 rounded-xl p-5 hover:border-gray-400 transition-colors group">
-                  <div className="flex items-start justify-between">
-                    <h3 className="font-semibold text-gray-900 group-hover:text-black">{project.title}</h3>
-                    <div className="flex items-center gap-3 text-sm text-gray-400">
-                      {project.stars > 0 && (
-                        <span className="flex items-center gap-1"><Star className="w-3 h-3" />{project.stars}</span>
+                <div key={project.id} className="border border-gray-200 rounded-xl overflow-hidden hover:border-gray-400 transition-colors group">
+                  
+                  {/* Top Text Details */}
+                  <div className="p-5">
+                    <div className="flex items-start justify-between">
+                      <a href={project.url} target="_blank" rel="noopener noreferrer" className="font-semibold text-gray-900 group-hover:text-black">
+                        {project.title}
+                      </a>
+                      <div className="flex items-center gap-3 text-sm text-gray-400">
+                        {project.stars > 0 && (
+                          <span className="flex items-center gap-1"><Star className="w-3 h-3" />{project.stars}</span>
+                        )}
+                        <a href={project.url} target="_blank" rel="noopener noreferrer" className="hover:text-gray-900 transition-colors">
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      </div>
+                    </div>
+                    
+                    {project.description && <p className="text-gray-500 text-sm mt-2">{project.description}</p>}
+                    
+                    <div className="flex flex-wrap items-center gap-3 mt-3">
+                      {project.language && (
+                        <span className="inline-block text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                          {project.language}
+                        </span>
                       )}
-                      <ExternalLink className="w-4 h-4" />
+                      
+                      {project.demoUrl && (
+                        <a href={project.demoUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs font-medium text-violet-600 hover:text-violet-700 transition-colors">
+                          <MonitorPlay className="w-3.5 h-3.5" /> Open App
+                        </a>
+                      )}
                     </div>
                   </div>
-                  {project.description && <p className="text-gray-500 text-sm mt-2">{project.description}</p>}
-                  {project.language && (
-                    <span className="inline-block mt-3 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-                      {project.language}
-                    </span>
+
+                  {/* NEW: Live Iframe Preview */}
+                  {project.demoUrl && project.demoUrl.startsWith('http') && (
+                    <div className="w-full aspect-video border-t border-gray-100 bg-gray-50">
+                      <iframe 
+                        src={project.demoUrl} 
+                        className="w-full h-full pointer-events-auto" 
+                        sandbox="allow-scripts allow-same-origin"
+                        loading="lazy"
+                        title={`${project.title} Live Demo`}
+                      />
+                    </div>
                   )}
-                </a>
+
+                </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Contribution Heatmap */}
+        {portfolio.contributions && (
+          <div className="pt-8">
+            <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-6">Activity</h2>
+            <div className="border border-gray-200 rounded-xl p-6 bg-gray-50/50">
+              <ContributionHeatmap data={portfolio.contributions} />
             </div>
           </div>
         )}

@@ -62,23 +62,24 @@ model User {
 }
 
 model Portfolio {
-  id           String    @id @default(cuid())
-  userId       String    @unique
-  user         User      @relation(fields: [userId], references: [id])
-  bio          String?
-  skills       String[]
-  theme        String    @default("minimal")
-  customDomain String?
-  contributions Json?
-  openToWork   Boolean   @default(false)
-  contactEmail String?
-  twitter      String?
-  linkedin     String?
-  github       String?
-  website      String?
-  projects     Project[]
-  views        View[]
-  updatedAt    DateTime  @updatedAt
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id])
+  bio            String?
+  skills         String[]
+  theme          String    @default("minimal")
+  customDomain   String?
+  contributions  Json?
+  openToWork     Boolean   @default(false)
+  contactEmail   String?
+  twitter        String?
+  linkedin       String?
+  github         String?
+  website        String?
+  customSections Json?     // NEW: Flexible JSON array for custom sections
+  projects       Project[]
+  views          View[]
+  updatedAt      DateTime  @updatedAt
 }
 
 model Project {
@@ -92,6 +93,7 @@ model Project {
   stars       Int       @default(0)
   url         String
   screenshot  String?
+  demoUrl     String?   // NEW: Store the live Vercel/Netlify preview URL
   order       Int       @default(0)
   featured    Boolean   @default(false)
 

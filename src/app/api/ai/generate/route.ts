@@ -1,7 +1,15 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { generateBio, generateProjectDescription, generateSkills, generateCoverLetter } from '@/lib/ai'
+import {
+  generateBio,
+  generateProjectDescription,
+  generateSkills,
+  generateCoverLetter,
+  generateLinkedInSummary,
+  generateInterviewTalkingPoints,
+  generateTagline,
+} from '@/lib/ai'
 
 const AI_LIMIT_FREE = 5
 
@@ -18,7 +26,7 @@ export async function POST(req: Request) {
 
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-  // WARNING FIX: Reliable AI rate-limiting using dedicated User columns
+  // Reliable AI rate-limiting using dedicated User columns
   if (user.plan === 'FREE') {
     const now = new Date()
     let currentCalls = user.aiCallsThisMonth
@@ -28,7 +36,7 @@ export async function POST(req: Request) {
     if (!resetAt || now >= resetAt) {
       currentCalls = 0
       resetAt = new Date(now)
-      resetAt.setMonth(resetAt.getMonth() + 1) // Set next reset to 1 month from now
+      resetAt.setMonth(resetAt.getMonth() + 1)
     }
 
     if (currentCalls >= AI_LIMIT_FREE) {
@@ -38,7 +46,6 @@ export async function POST(req: Request) {
       )
     }
 
-    // Increment the counter and update reset date
     await prisma.user.update({
       where: { id: user.id },
       data: {
@@ -48,19 +55,31 @@ export async function POST(req: Request) {
     })
   }
 
-  // BUG FIX (Carried over): Parse the request body exactly once
-  const { type, projects, skills, repoName, language, stars, jobDescription } = await req.json()
+  // Parse request body exactly once
+  const {
+    type,
+    projects,
+    skills,
+    repoName,
+    language,
+    stars,
+    jobDescription,
+    project,
+  } = await req.json()
+
+  const username = user.name || user.username || 'Developer'
+  const portfolioProjects = projects ?? user.portfolio?.projects ?? []
+  const portfolioSkills = skills ?? user.portfolio?.skills ?? []
 
   try {
+    // ── Existing types ──────────────────────────────────────────────────────
+
     if (type === 'bio') {
       const bio = await generateBio({
-        username: user.username ?? user.name ?? '',
-        projects: projects ?? [],
-        skills: skills ?? [],
+        username,
+        projects: portfolioProjects,
+        skills: portfolioSkills,
       })
-
-      // We no longer log AI views to the View table to avoid polluting analytics
-
       return NextResponse.json({ bio })
     }
 
@@ -70,7 +89,7 @@ export async function POST(req: Request) {
     }
 
     if (type === 'skills') {
-      const suggestedSkills = await generateSkills({ projects: projects ?? [] })
+      const suggestedSkills = await generateSkills({ projects: portfolioProjects })
       return NextResponse.json({ skills: suggestedSkills })
     }
 
@@ -78,15 +97,44 @@ export async function POST(req: Request) {
       if (!jobDescription) {
         return NextResponse.json({ error: 'Job description is required' }, { status: 400 })
       }
-      
       const coverLetter = await generateCoverLetter({
-        username: user.name || user.username || 'Developer',
-        projects: projects ?? user.portfolio?.projects ?? [],
-        skills: skills ?? user.portfolio?.skills ?? [],
-        jobDescription
+        username,
+        projects: portfolioProjects,
+        skills: portfolioSkills,
+        jobDescription,
       })
-      
       return NextResponse.json({ coverLetter })
+    }
+
+    // ── New types ───────────────────────────────────────────────────────────
+
+    if (type === 'linkedin-summary') {
+      const summary = await generateLinkedInSummary({
+        username,
+        projects: portfolioProjects,
+        skills: portfolioSkills,
+      })
+      return NextResponse.json({ summary })
+    }
+
+    if (type === 'interview-points') {
+      if (!project) {
+        return NextResponse.json({ error: 'Project data is required' }, { status: 400 })
+      }
+      const points = await generateInterviewTalkingPoints({
+        project,
+        skills: portfolioSkills,
+      })
+      return NextResponse.json({ points })
+    }
+
+    if (type === 'tagline') {
+      const taglines = await generateTagline({
+        username,
+        projects: portfolioProjects,
+        skills: portfolioSkills,
+      })
+      return NextResponse.json({ taglines })
     }
 
     return NextResponse.json({ error: 'Unknown type' }, { status: 400 })

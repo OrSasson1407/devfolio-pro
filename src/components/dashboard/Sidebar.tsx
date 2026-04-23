@@ -11,13 +11,15 @@ import {
   LogOut,
   User,
   ExternalLink,
-  FileText
+  FileText,
+  Sparkles,
 } from 'lucide-react'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/editor', label: 'Editor', icon: Edit3 },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart2 },
+  { href: '/dashboard/ai-tools', label: 'AI Tools', icon: Sparkles },
   { href: '/dashboard/cover-letter', label: 'Cover Letter', icon: FileText },
   { href: '/dashboard/billing', label: 'Billing', icon: CreditCard },
 ]
@@ -27,7 +29,7 @@ interface SidebarProps {
     name?: string | null
     email?: string | null
     image?: string | null
-    username?: string | null // BUG FIX: Added username prop
+    username?: string | null
   }
 }
 
@@ -62,6 +64,12 @@ export default function Sidebar({ user }: SidebarProps) {
             >
               <Icon className="w-4 h-4" />
               {label}
+              {/* "New" badge on AI Tools */}
+              {href === '/dashboard/ai-tools' && !active && (
+                <span className="ml-auto text-[10px] font-semibold bg-violet-500/20 text-violet-300 px-1.5 py-0.5 rounded-full">
+                  NEW
+                </span>
+              )}
             </Link>
           )
         })}
@@ -71,7 +79,7 @@ export default function Sidebar({ user }: SidebarProps) {
       <div className="p-4 border-t border-gray-800 space-y-2">
         {/* View public portfolio */}
         <Link
-          href={`/${user.username ?? ''}`} // BUG FIX: Link by username instead of display name
+          href={`/${user.username ?? ''}`}
           target="_blank"
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
         >

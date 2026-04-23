@@ -28,10 +28,35 @@ interface SkillsInput {
 
 interface CoverLetterInput {
   username: string
-  projects: any[] // flexible array to handle various DB project structures
+  projects: any[]
   skills: string[]
   jobDescription: string
 }
+
+interface LinkedInSummaryInput {
+  username: string
+  projects: { name?: string; title?: string; language: string | null }[]
+  skills: string[]
+}
+
+interface InterviewTalkingPointsInput {
+  project: {
+    title: string
+    description: string | null
+    language: string | null
+    stars: number
+    url: string
+  }
+  skills: string[]
+}
+
+interface TaglineInput {
+  username: string
+  projects: { name?: string; title?: string; language: string | null }[]
+  skills: string[]
+}
+
+// ─── Existing generators ──────────────────────────────────────────────────────
 
 export async function generateBio({ username, projects, skills }: BioInput): Promise<string> {
   const message = await client.messages.create({
@@ -131,4 +156,142 @@ Instructions:
 
   const block = message.content[0]
   return block.type === 'text' ? block.text : ''
+}
+
+// ─── New generators ───────────────────────────────────────────────────────────
+
+/**
+ * Generates a polished LinkedIn "About" section from portfolio data.
+ * Uses Opus for quality — this is a high-visibility professional artifact.
+ */
+export async function generateLinkedInSummary({ username, projects, skills }: LinkedInSummaryInput): Promise<string> {
+  const projectNames = projects
+    .map((p) => p.title ?? p.name)
+    .filter(Boolean)
+    .slice(0, 6)
+    .join(', ')
+
+  const message = await client.messages.create({
+    model: OPUS_MODEL,
+    max_tokens: 500,
+    messages: [
+      {
+        role: 'user',
+        content: `Write a LinkedIn "About" section for a software developer named ${username}.
+
+Their skills: ${skills.join(', ')}
+Their notable projects: ${projectNames}
+
+Rules:
+- 3-4 short paragraphs, no bullet points
+- First paragraph: who they are and what they build
+- Second paragraph: technical strengths with concrete examples from projects
+- Third paragraph: what they're looking for / what excites them
+- Optional fourth: brief human touch (collaboration style, interests)
+- Confident but not arrogant. No "passionate about", "rockstar", or "ninja"
+- Write in first person
+- Output ONLY the About text, no preamble or labels`,
+      },
+    ],
+  })
+
+  const block = message.content[0]
+  return block.type === 'text' ? block.text : ''
+}
+
+/**
+ * Generates interview "how I built it" talking points for a single project.
+ * Returns a structured JSON string with sections: overview, challenges, decisions, results.
+ * Uses Haiku — structured output task, speed matters.
+ */
+export async function generateInterviewTalkingPoints({
+  project,
+  skills,
+}: InterviewTalkingPointsInput): Promise<{
+  overview: string
+  challenges: string[]
+  decisions: string[]
+  results: string
+}> {
+  const message = await client.messages.create({
+    model: HAIKU_MODEL,
+    max_tokens: 600,
+    messages: [
+      {
+        role: 'user',
+        content: `You are a technical interview coach. Generate interview talking points for this project:
+
+Project: ${project.title}
+Description: ${project.description ?? 'Not provided'}
+Language/Stack: ${project.language ?? 'Unknown'}
+GitHub Stars: ${project.stars}
+Developer skills: ${skills.join(', ')}
+
+Return a JSON object with exactly these keys — no markdown, no preamble, pure JSON:
+{
+  "overview": "1-2 sentence STAR-style project summary for an interview",
+  "challenges": ["challenge 1", "challenge 2", "challenge 3"],
+  "decisions": ["tech decision 1 with brief rationale", "tech decision 2 with brief rationale"],
+  "results": "1 sentence on outcome/impact/learning"
+}`,
+      },
+    ],
+  })
+
+  const block = message.content[0]
+  if (block.type !== 'text') {
+    return { overview: '', challenges: [], decisions: [], results: '' }
+  }
+
+  try {
+    const clean = block.text.replace(/```json|```/g, '').trim()
+    return JSON.parse(clean)
+  } catch {
+    return { overview: block.text, challenges: [], decisions: [], results: '' }
+  }
+}
+
+/**
+ * Generates a punchy one-liner tagline for the portfolio hero section.
+ * Uses Haiku — short creative task, latency-sensitive (shown in editor preview).
+ * Returns 3 variants so the user can pick their favourite.
+ */
+export async function generateTagline({ username, projects, skills }: TaglineInput): Promise<string[]> {
+  const projectNames = projects
+    .map((p) => p.title ?? p.name)
+    .filter(Boolean)
+    .slice(0, 4)
+    .join(', ')
+
+  const message = await client.messages.create({
+    model: HAIKU_MODEL,
+    max_tokens: 200,
+    messages: [
+      {
+        role: 'user',
+        content: `Generate 3 punchy one-liner taglines for a developer portfolio hero section.
+
+Developer: ${username}
+Skills: ${skills.slice(0, 6).join(', ')}
+Projects: ${projectNames}
+
+Rules:
+- Each tagline must be under 12 words
+- No quotes, no labels, no numbering
+- Confident and specific — mention a real skill or project type
+- Avoid: "passionate", "full-stack ninja", "building the future", generic fluff
+- Vary the style: one technical, one outcome-focused, one personality-driven
+- Return ONLY 3 taglines, one per line, nothing else`,
+      },
+    ],
+  })
+
+  const block = message.content[0]
+  if (block.type !== 'text') return []
+
+  return block.text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .slice(0, 3)
 }

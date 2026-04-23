@@ -19,7 +19,7 @@ import {
 } from '@dnd-kit/sortable'
 import ProjectCard from './ProjectCard'
 import SkillBadge from './SkillBadge'
-import { Save, Sparkles, Globe } from 'lucide-react'
+import { Save, Sparkles, Globe, Zap } from 'lucide-react'
 import { FaGithub, FaLinkedin, FaTwitter } from 'react-icons/fa'
 
 interface Project {
@@ -58,7 +58,7 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
   const [theme, setTheme] = useState(portfolio.theme)
   const [openToWork, setOpenToWork] = useState(portfolio.openToWork)
   const [contactEmail, setContactEmail] = useState(portfolio.contactEmail ?? '')
-  
+
   // Social Links state
   const [twitter, setTwitter] = useState(portfolio.twitter ?? '')
   const [linkedin, setLinkedin] = useState(portfolio.linkedin ?? '')
@@ -70,7 +70,9 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
   )
   const [newSkill, setNewSkill] = useState('')
   const [saving, setSaving] = useState(false)
-  const [generating, setGenerating] = useState(false)
+  const [generatingBio, setGeneratingBio] = useState(false)
+  const [generatingTaglines, setGeneratingTaglines] = useState(false)
+  const [taglines, setTaglines] = useState<string[]>([])
   const [saved, setSaved] = useState(false)
 
   const sensors = useSensors(
@@ -141,7 +143,7 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
   }
 
   async function handleGenerateBio() {
-    setGenerating(true)
+    setGeneratingBio(true)
     try {
       const res = await fetch('/api/ai/generate', {
         method: 'POST',
@@ -155,7 +157,27 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
       const data = await res.json()
       if (data.bio) setBio(data.bio)
     } finally {
-      setGenerating(false)
+      setGeneratingBio(false)
+    }
+  }
+
+  async function handleGenerateTaglines() {
+    setGeneratingTaglines(true)
+    setTaglines([])
+    try {
+      const res = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'tagline',
+          projects: projects.slice(0, 6).map((p) => ({ title: p.title, language: p.language })),
+          skills,
+        }),
+      })
+      const data = await res.json()
+      if (data.taglines) setTaglines(data.taglines)
+    } finally {
+      setGeneratingTaglines(false)
     }
   }
 
@@ -209,7 +231,7 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
             Show "Open to work" badge on my portfolio
           </label>
         </div>
-        
+
         {openToWork && (
           <div className="pt-2 animate-in fade-in slide-in-from-top-2 duration-200">
             <label className="block text-sm text-gray-400 mb-1">Contact Email</label>
@@ -224,17 +246,50 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
         )}
       </div>
 
+      {/* Hero Tagline */}
+      <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-white font-semibold">Hero Tagline</h2>
+            <p className="text-gray-500 text-xs mt-0.5">A punchy one-liner for your portfolio header.</p>
+          </div>
+          <button
+            onClick={handleGenerateTaglines}
+            disabled={generatingTaglines}
+            className="flex items-center gap-2 text-sm text-yellow-400 hover:text-yellow-300 disabled:opacity-50 transition-colors"
+          >
+            <Zap className="w-4 h-4" />
+            {generatingTaglines ? 'Generating...' : 'AI Suggest'}
+          </button>
+        </div>
+
+        {taglines.length > 0 && (
+          <div className="space-y-2">
+            {taglines.map((line, i) => (
+              <button
+                key={i}
+                onClick={() => setBio(line)}
+                className="w-full text-left text-sm text-gray-300 bg-gray-800 border border-gray-700 hover:border-violet-500 hover:text-white px-4 py-2.5 rounded-lg transition-colors"
+              >
+                {line}
+              </button>
+            ))}
+            <p className="text-xs text-gray-600">Click a tagline to use it as your bio.</p>
+          </div>
+        )}
+      </div>
+
       {/* Bio */}
       <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-white font-semibold">Bio</h2>
           <button
             onClick={handleGenerateBio}
-            disabled={generating}
+            disabled={generatingBio}
             className="flex items-center gap-2 text-sm text-violet-400 hover:text-violet-300 disabled:opacity-50 transition-colors"
           >
             <Sparkles className="w-4 h-4" />
-            {generating ? 'Generating...' : 'AI Generate'}
+            {generatingBio ? 'Generating...' : 'AI Generate'}
           </button>
         </div>
         <textarea
@@ -251,7 +306,9 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
         <h2 className="text-white font-semibold">Social Links</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1">
-            <label className="text-sm text-gray-400 flex items-center gap-2"><FaGithub className="w-4 h-4" /> GitHub URL</label>
+            <label className="text-sm text-gray-400 flex items-center gap-2">
+              <FaGithub className="w-4 h-4" /> GitHub URL
+            </label>
             <input
               type="url"
               value={github}
@@ -261,7 +318,9 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-sm text-gray-400 flex items-center gap-2"><FaLinkedin className="w-4 h-4" /> LinkedIn URL</label>
+            <label className="text-sm text-gray-400 flex items-center gap-2">
+              <FaLinkedin className="w-4 h-4" /> LinkedIn URL
+            </label>
             <input
               type="url"
               value={linkedin}
@@ -271,7 +330,9 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-sm text-gray-400 flex items-center gap-2"><FaTwitter className="w-4 h-4" /> Twitter/X URL</label>
+            <label className="text-sm text-gray-400 flex items-center gap-2">
+              <FaTwitter className="w-4 h-4" /> Twitter/X URL
+            </label>
             <input
               type="url"
               value={twitter}
@@ -281,7 +342,9 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-sm text-gray-400 flex items-center gap-2"><Globe className="w-4 h-4" /> Personal Website</label>
+            <label className="text-sm text-gray-400 flex items-center gap-2">
+              <Globe className="w-4 h-4" /> Personal Website
+            </label>
             <input
               type="url"
               value={website}

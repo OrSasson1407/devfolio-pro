@@ -32,6 +32,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# playwright
+/playwright-report
+/test-results
+
 # =========================
 # SECURITY & SECRETS
 # =========================
@@ -45,6 +49,9 @@ next-env.d.ts
 .env.local
 *.env
 *.env.*
+
+# Allow the example file — it contains no real secrets
+!.env.example
 
 # Stripe CLI
 stripe.exe

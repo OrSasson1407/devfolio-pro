@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: 💬 Ask a Question
+    url: https://github.com/yourusername/devfolio-pro/discussions/new?category=q-a
+    about: Not a bug or feature request? Ask in Discussions instead.
+
+  - name: 🔒 Report a Security Vulnerability
+    url: mailto:security@devfolio-pro.com
+    about: Please report security issues privately — do not open a public issue.
+
+  - name: 📖 Documentation
+    url: https://github.com/yourusername/devfolio-pro#readme
+    about: Check the README for setup guides, API reference, and deployment instructions.

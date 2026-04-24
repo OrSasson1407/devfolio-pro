@@ -8,7 +8,7 @@ import {
   extractTopLanguages,
 } from '../../../../lib/github'
 
-export async function POST(req: Request) {
+export async function POST(_req: Request) {
   // 1. Get session
   const session = await auth()
   if (!session?.user?.id) {
@@ -60,10 +60,12 @@ export async function POST(req: Request) {
         bio: profile.bio,
         skills: topLanguages,
         theme: 'minimal',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         contributions: contributions as any,
       },
       update: {
         skills: topLanguages,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         contributions: contributions as any,
       },
     })
@@ -119,10 +121,11 @@ export async function POST(req: Request) {
         totalContributions: contributions.totalContributions,
       },
     })
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[github/sync] error:', err)
+    const errorMessage = err instanceof Error ? err.message : 'Sync failed'
     return NextResponse.json(
-      { error: err.message ?? 'Sync failed' },
+      { error: errorMessage },
       { status: 500 }
     )
   }

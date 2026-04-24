@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import Link from 'next/link'
 import AIToolsClient from '@/components/dashboard/AIToolsClient'
 
 export default async function AIToolsPage() {
@@ -25,12 +26,12 @@ export default async function AIToolsPage() {
         <p className="text-gray-400 mb-6">
           Sync your GitHub first to unlock AI tools.
         </p>
-        <a
+        <Link
           href="/dashboard"
           className="bg-violet-600 hover:bg-violet-500 text-white px-6 py-3 rounded-xl text-sm font-medium transition-colors"
         >
           Go to Dashboard
-        </a>
+        </Link>
       </div>
     )
   }

@@ -1,4 +1,5 @@
 import { Star, ExternalLink } from 'lucide-react'
+import Image from 'next/image'
 
 interface Project {
   id: string
@@ -27,7 +28,13 @@ export default function TerminalTheme({ user, portfolio }: Props) {
           <p className="text-gray-500 text-sm">$ whoami</p>
           <div className="flex items-center gap-4">
             {user.avatar && (
-              <img src={user.avatar} alt={user.name ?? ''} className="w-16 h-16 rounded border-2 border-green-800" />
+              <Image 
+                src={user.avatar} 
+                alt={user.name ?? ''} 
+                width={64}
+                height={64}
+                className="w-16 h-16 rounded border-2 border-green-800" 
+              />
             )}
             <div>
               <h1 className="text-2xl font-bold text-green-300">{user.name}</h1>
@@ -87,7 +94,7 @@ export default function TerminalTheme({ user, portfolio }: Props) {
         {/* Footer */}
         <div className="pt-4 text-green-900 text-sm">
           <p>$ exit</p>
-          <p className="mt-1">// built with DevFolio Pro</p>
+          <p className="mt-1">{`// built with DevFolio Pro`}</p>
         </div>
       </div>
     </div>

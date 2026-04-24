@@ -32,7 +32,7 @@ export default async function DashboardPage() {
 })
 
   const portfolio = user?.portfolio
- const totalViews = portfolio?._count?.views ?? 0
+  const totalViews = portfolio?._count?.views ?? 0
   const totalProjects = portfolio?.projects.length ?? 0
   const featuredProjects = portfolio?.projects.filter(p => p.featured) ?? []
   const topLanguages = portfolio?.skills ?? []
@@ -41,6 +41,7 @@ export default async function DashboardPage() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   
   // FIX: Bypass TS Cache for referral fields
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const referralLink = `${baseUrl}?ref=${(user as any)?.referralCode}`
 
   return (
@@ -52,7 +53,7 @@ export default async function DashboardPage() {
             Welcome back, {user?.name?.split(' ')[0] ?? 'developer'} 👋
           </h1>
           <p className="text-gray-400 mt-1">
-            Here's what's happening with your portfolio.
+            Here&apos;s what&apos;s happening with your portfolio.
           </p>
         </div>
         <SyncButton />
@@ -95,6 +96,7 @@ export default async function DashboardPage() {
               <span className="text-sm font-semibold text-white">Credits Earned:</span>
               <span className="bg-gray-800 text-emerald-400 font-bold px-2 py-0.5 rounded text-sm">
                 {/* FIX: Bypass TS Cache */}
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 {(user as any)?.referralCredits || 0}
               </span>
             </div>
@@ -120,7 +122,7 @@ export default async function DashboardPage() {
             Sync your GitHub to get started
           </h2>
           <p className="text-gray-400 mb-6 max-w-sm mx-auto">
-            Click "Sync GitHub" above to pull your repos, languages, and
+            Click &quot;Sync GitHub&quot; above to pull your repos, languages, and
             contribution data into your portfolio.
           </p>
         </div>

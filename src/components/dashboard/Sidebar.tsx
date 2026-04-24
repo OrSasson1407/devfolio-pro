@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
+import Logo from '@/components/shared/Logo'
 import {
   LayoutDashboard,
   Edit3,
@@ -13,10 +14,9 @@ import {
   ExternalLink,
   FileText,
   Sparkles,
-  Users // NEW
+  Users,
 } from 'lucide-react'
 
-// NEW: Added the Team navigation item
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/editor', label: 'Editor', icon: Edit3 },
@@ -43,12 +43,7 @@ export default function Sidebar({ user }: SidebarProps) {
     <aside className="fixed left-0 top-0 h-full w-64 bg-gray-900 border-r border-gray-800 flex flex-col">
       {/* Logo */}
       <div className="p-6 border-b border-gray-800">
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">D</span>
-          </div>
-          <span className="text-white font-bold text-lg">DevFolio</span>
-        </Link>
+        <Logo size="sm" href="/dashboard" showPro={true} />
       </div>
 
       {/* Nav */}
@@ -67,7 +62,6 @@ export default function Sidebar({ user }: SidebarProps) {
             >
               <Icon className="w-4 h-4" />
               {label}
-              {/* "New" badge on AI Tools */}
               {href === '/dashboard/ai-tools' && !active && (
                 <span className="ml-auto text-[10px] font-semibold bg-violet-500/20 text-violet-300 px-1.5 py-0.5 rounded-full">
                   NEW
@@ -80,7 +74,6 @@ export default function Sidebar({ user }: SidebarProps) {
 
       {/* User + actions */}
       <div className="p-4 border-t border-gray-800 space-y-2">
-        {/* View public portfolio */}
         <Link
           href={`/${user.username ?? ''}`}
           target="_blank"
@@ -90,7 +83,6 @@ export default function Sidebar({ user }: SidebarProps) {
           View Portfolio
         </Link>
 
-        {/* User info */}
         <div className="flex items-center gap-3 px-3 py-2">
           {user.image ? (
             <img
@@ -109,7 +101,6 @@ export default function Sidebar({ user }: SidebarProps) {
           </div>
         </div>
 
-        {/* Sign out */}
         <button
           onClick={() => signOut({ callbackUrl: '/login' })}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:text-red-400 hover:bg-gray-800 transition-colors"

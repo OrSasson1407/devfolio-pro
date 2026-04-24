@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     }
 
     // NEW: Select the correct Price ID based on the toggle!
-    const priceId = interval === 'year' 
+      const priceId = interval === 'year' 
       ? process.env.STRIPE_PRO_ANNUAL_PRICE_ID! 
       : process.env.STRIPE_PRO_PRICE_ID!
 

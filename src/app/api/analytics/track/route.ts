@@ -5,7 +5,7 @@ import { Resend } from 'resend'
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 const rateLimitMap = new Map<string, number>()
-const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000 
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000
 
 function isRateLimited(ip: string, username: string): boolean {
   const key = `${ip}:${username}`
@@ -77,23 +77,36 @@ export async function POST(req: Request) {
       },
     })
 
-    // NEW: Webhook / Zapier Integration (Fire and Forget) - TS Cache Bypassed
-    if ((user.portfolio as any).webhookUrl) {
-      fetch((user.portfolio as any).webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          event: 'portfolio_view',
-          portfolioId: user.portfolio.id,
-          username: user.username,
-          referrer: referrer ?? 'direct',
-          country: country ?? 'unknown',
-          timestamp: new Date().toISOString()
-        })
-      }).catch(err => console.error('Webhook payload failed to send:', err))
+    // Webhook / Zapier Integration with SSRF guard
+    const webhookUrl = (user.portfolio as any).webhookUrl
+    if (webhookUrl) {
+      try {
+        const parsed = new URL(webhookUrl)
+        const isSafe =
+          ['http:', 'https:'].includes(parsed.protocol) &&
+          !parsed.hostname.match(
+            /^(localhost|127\.|10\.|192\.168\.|169\.254\.|::1)/
+          )
+        if (isSafe) {
+          fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event: 'portfolio_view',
+              portfolioId: user.portfolio.id,
+              username: user.username,
+              referrer: referrer ?? 'direct',
+              country: country ?? 'unknown',
+              timestamp: new Date().toISOString(),
+            }),
+          }).catch((err) => console.error('Webhook payload failed to send:', err))
+        }
+      } catch (err) {
+        console.error('Invalid webhook URL:', err)
+      }
     }
 
-    // Milestone Notification 
+    // Milestone Notification
     const totalViews = await prisma.view.count({
       where: { portfolioId: user.portfolio.id },
     })
@@ -115,14 +128,14 @@ export async function POST(req: Request) {
         const hostname = refUrl.hostname.replace(/^www\./, '').toLowerCase()
 
         const ignoredDomains = [
-          'google.', 'bing.com', 'yahoo.com', 'duckduckgo.com', 'baidu.com', 
-          't.co', 'twitter.com', 'x.com', 
-          'linkedin.com', 'lnkd.in',      
+          'google.', 'bing.com', 'yahoo.com', 'duckduckgo.com', 'baidu.com',
+          't.co', 'twitter.com', 'x.com',
+          'linkedin.com', 'lnkd.in',
           'facebook.com', 'instagram.com',
-          'localhost', '127.0.0.1'        
+          'localhost', '127.0.0.1',
         ]
 
-        const isIgnored = ignoredDomains.some(domain => hostname.includes(domain))
+        const isIgnored = ignoredDomains.some((domain) => hostname.includes(domain))
 
         if (!isIgnored) {
           await resend.emails.send({

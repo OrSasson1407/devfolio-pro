@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   // Security Check: Ensure only Vercel's Cron scheduler can trigger this
   // In local development, you can temporarily comment this out to test it in your browser!
   const authHeader = req.headers.get('Authorization')
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}` && process.env.NODE_ENV === 'production') {
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

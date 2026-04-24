@@ -138,8 +138,20 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ error: 'Unknown type' }, { status: 400 })
-  } catch (err: any) {
+} catch (err: any) {
     console.error('[ai/generate] error:', err)
+
+    const isOutOfCredits =
+      err?.error?.error?.type === 'invalid_request_error' &&
+      err?.error?.error?.message?.includes('credit balance is too low')
+
+    if (isOutOfCredits) {
+      return NextResponse.json(
+        { error: 'AI features are temporarily unavailable. Please try again later.' },
+        { status: 503 }
+      )
+    }
+
     return NextResponse.json({ error: err.message ?? 'AI generation failed' }, { status: 500 })
   }
 }

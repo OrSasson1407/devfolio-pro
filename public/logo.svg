@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40" fill="none">
+  <!-- Icon -->
+  <rect width="40" height="40" rx="10" fill="#7C3AED"/>
+  <text x="20" y="29" font-family="Georgia, serif" font-size="24" font-weight="700" fill="white" text-anchor="middle">D</text>
+  <circle cx="32" cy="7" r="4" fill="#A78BFA"/>
+  <!-- Wordmark -->
+  <text x="48" y="27" font-family="Georgia, serif" font-size="20" font-weight="700" fill="white">Dev</text>
+  <text x="84" y="27" font-family="Georgia, serif" font-size="20" font-weight="700" fill="#A78BFA">Folio</text>
+  <!-- PRO badge -->
+  <rect x="124" y="12" width="30" height="16" rx="4" fill="#7C3AED"/>
+  <text x="139" y="24" font-family="Georgia, serif" font-size="9" font-weight="700" fill="white" text-anchor="middle">PRO</text>
+</svg>

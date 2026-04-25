@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next'
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 interface PortfolioEntry {
   updatedAt: Date
   user: { username: string | null } | null

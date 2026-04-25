@@ -7,27 +7,29 @@ import {
   extractTopLanguages,
 } from '@/lib/github'
 
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message
+  return 'Unknown error'
+}
+
 export async function GET(req: Request) {
-  // 1. Authenticate the Cron request
   const authHeader = req.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
-    // 2. Fetch all PRO users who have a linked GitHub account
     const proUsers = await prisma.user.findMany({
       where: { plan: 'PRO' },
       include: {
         accounts: {
-          where: { provider: 'github' }
-        }
-      }
+          where: { provider: 'github' },
+        },
+      },
     })
 
     const results = []
 
-    // 3. Process each user sequentially (to avoid hitting GitHub rate limits too hard)
     for (const user of proUsers) {
       try {
         const account = user.accounts[0]
@@ -44,7 +46,6 @@ export async function GET(req: Request) {
 
         const token = account.access_token
 
-        // Fetch fresh data from GitHub
         const [repos, profile, contributions] = await Promise.all([
           fetchGitHubRepos(username, token),
           fetchGitHubProfile(username, token),
@@ -53,7 +54,6 @@ export async function GET(req: Request) {
 
         const topLanguages = extractTopLanguages(repos)
 
-        // Upsert Portfolio (updates contributions and skills)
         const portfolio = await prisma.portfolio.upsert({
           where: { userId: user.id },
           create: {
@@ -61,15 +61,16 @@ export async function GET(req: Request) {
             bio: profile.bio,
             skills: topLanguages,
             theme: 'minimal',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             contributions: contributions as any,
           },
           update: {
             skills: topLanguages,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             contributions: contributions as any,
           },
         })
 
-        // Sync projects
         for (let index = 0; index < repos.length; index++) {
           const repo = repos[index]
           const existing = await prisma.project.findFirst({
@@ -102,7 +103,6 @@ export async function GET(req: Request) {
           }
         }
 
-        // Update basic user details
         await prisma.user.update({
           where: { id: user.id },
           data: {
@@ -112,15 +112,15 @@ export async function GET(req: Request) {
         })
 
         results.push({ userId: user.id, status: 'success' })
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error(`[cron] Failed to sync user ${user.id}:`, err)
-        results.push({ userId: user.id, status: 'failed', reason: err.message })
+        results.push({ userId: user.id, status: 'failed', reason: getErrorMessage(err) })
       }
     }
 
     return NextResponse.json({ success: true, processed: proUsers.length, results })
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[cron] Critical error:', err)
-    return NextResponse.json({ error: err.message ?? 'Cron failed' }, { status: 500 })
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 })
   }
 }

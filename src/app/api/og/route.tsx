@@ -3,6 +3,11 @@ import { NextRequest } from 'next/server'
 
 export const runtime = 'edge'
 
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message
+  return 'Failed to generate image'
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl
@@ -20,7 +25,7 @@ export async function GET(req: NextRequest) {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#030712', // gray-950
+            backgroundColor: '#030712',
             backgroundImage: 'radial-gradient(circle at 25px 25px, #3b0764 2%, transparent 0%), radial-gradient(circle at 75px 75px, #3b0764 2%, transparent 0%)',
             backgroundSize: '100px 100px',
           }}
@@ -31,7 +36,7 @@ export async function GET(req: NextRequest) {
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: '#111827', // gray-900
+              backgroundColor: '#111827',
               border: '2px solid #374151',
               borderRadius: '32px',
               padding: '60px 80px',
@@ -47,7 +52,7 @@ export async function GET(req: NextRequest) {
                   height: 180,
                   borderRadius: '50%',
                   marginBottom: 30,
-                  border: '6px solid #8b5cf6', // violet-500
+                  border: '6px solid #8b5cf6',
                   boxShadow: '0 10px 20px rgba(0,0,0,0.3)',
                 }}
               />
@@ -68,14 +73,14 @@ export async function GET(req: NextRequest) {
                 <span style={{ fontSize: 72, color: '#9ca3af' }}>{name.charAt(0).toUpperCase()}</span>
               </div>
             )}
-            
+
             <h1 style={{ fontSize: 72, color: '#f9fafb', margin: 0, fontWeight: 800, letterSpacing: '-0.02em' }}>
               {name}
             </h1>
             <p style={{ fontSize: 36, color: '#a78bfa', margin: '16px 0 0 0', fontWeight: 500 }}>
               @{username}
             </p>
-            
+
             <div style={{ display: 'flex', marginTop: 48, alignItems: 'center' }}>
               <div style={{ fontSize: 24, color: '#9ca3af', display: 'flex', alignItems: 'center', fontWeight: 600 }}>
                 <span style={{ color: '#8b5cf6', marginRight: 12, fontSize: 30 }}>✦</span> Built with DevFolio Pro
@@ -89,8 +94,8 @@ export async function GET(req: NextRequest) {
         height: 630,
       }
     )
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('OG Image Generation Error:', e)
-    return new Response('Failed to generate image', { status: 500 })
+    return new Response(getErrorMessage(e), { status: 500 })
   }
 }

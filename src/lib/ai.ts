@@ -4,15 +4,22 @@ const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
 })
 
-// Use Opus only where quality matters most (bio = user's first impression).
-// Descriptions and skills are short, structured outputs — Haiku is faster and
-// ~25x cheaper with no meaningful quality difference for these tasks.
 const OPUS_MODEL = 'claude-opus-4-6'
 const HAIKU_MODEL = 'claude-haiku-4-5-20251001'
 
+interface Project {
+  name?: string
+  title?: string
+  repoName?: string
+  language: string | null
+  description?: string | null
+  stars?: number
+  url?: string
+}
+
 interface BioInput {
   username: string
-  projects: { name: string; language: string | null }[]
+  projects: Project[]
   skills: string[]
 }
 
@@ -23,19 +30,19 @@ interface DescriptionInput {
 }
 
 interface SkillsInput {
-  projects: { language: string | null; name: string }[]
+  projects: Project[]
 }
 
 interface CoverLetterInput {
   username: string
-  projects: any[]
+  projects: Project[]
   skills: string[]
   jobDescription: string
 }
 
 interface LinkedInSummaryInput {
   username: string
-  projects: { name?: string; title?: string; language: string | null }[]
+  projects: Project[]
   skills: string[]
 }
 
@@ -52,7 +59,7 @@ interface InterviewTalkingPointsInput {
 
 interface TaglineInput {
   username: string
-  projects: { name?: string; title?: string; language: string | null }[]
+  projects: Project[]
   skills: string[]
 }
 
@@ -126,7 +133,10 @@ Return ONLY a comma-separated list. No explanation. Example: TypeScript, React, 
 }
 
 export async function generateCoverLetter({ username, projects, skills, jobDescription }: CoverLetterInput): Promise<string> {
-  const projectNames = projects.map((p) => p.title || p.repoName || p.name).filter(Boolean).join(', ')
+  const projectNames = projects
+    .map((p) => p.title || p.repoName || p.name)
+    .filter(Boolean)
+    .join(', ')
 
   const message = await client.messages.create({
     model: OPUS_MODEL,
@@ -134,7 +144,7 @@ export async function generateCoverLetter({ username, projects, skills, jobDescr
     messages: [
       {
         role: 'user',
-        content: `You are an expert technical career coach. Write a professional, modern cover letter for ${username}. 
+        content: `You are an expert technical career coach. Write a professional, modern cover letter for ${username}.
   
 Job Description:
 ${jobDescription}
@@ -160,10 +170,6 @@ Instructions:
 
 // ─── New generators ───────────────────────────────────────────────────────────
 
-/**
- * Generates a polished LinkedIn "About" section from portfolio data.
- * Uses Opus for quality — this is a high-visibility professional artifact.
- */
 export async function generateLinkedInSummary({ username, projects, skills }: LinkedInSummaryInput): Promise<string> {
   const projectNames = projects
     .map((p) => p.title ?? p.name)
@@ -199,11 +205,6 @@ Rules:
   return block.type === 'text' ? block.text : ''
 }
 
-/**
- * Generates interview "how I built it" talking points for a single project.
- * Returns a structured JSON string with sections: overview, challenges, decisions, results.
- * Uses Haiku — structured output task, speed matters.
- */
 export async function generateInterviewTalkingPoints({
   project,
   skills,
@@ -251,11 +252,6 @@ Return a JSON object with exactly these keys — no markdown, no preamble, pure 
   }
 }
 
-/**
- * Generates a punchy one-liner tagline for the portfolio hero section.
- * Uses Haiku — short creative task, latency-sensitive (shown in editor preview).
- * Returns 3 variants so the user can pick their favourite.
- */
 export async function generateTagline({ username, projects, skills }: TaglineInput): Promise<string[]> {
   const projectNames = projects
     .map((p) => p.title ?? p.name)

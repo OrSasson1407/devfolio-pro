@@ -1,10 +1,14 @@
 import { MetadataRoute } from 'next'
 import { prisma } from '@/lib/prisma'
 
+interface PortfolioEntry {
+  updatedAt: Date
+  user: { username: string | null } | null
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
-  // Static pages
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
@@ -20,16 +24,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
 
-  // Dynamic portfolio pages
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const portfolios = await (prisma as any).portfolio.findMany({
     where: { isPublicDirectory: true },
     include: { user: { select: { username: true } } },
-  })
+  }) as PortfolioEntry[]
 
   const portfolioPages: MetadataRoute.Sitemap = portfolios
-    .filter((p: any) => p.user?.username)
-    .map((p: any) => ({
-      url: `${baseUrl}/${p.user.username}`,
+    .filter((p) => p.user?.username)
+    .map((p) => ({
+      url: `${baseUrl}/${p.user!.username}`,
       lastModified: p.updatedAt,
       changeFrequency: 'weekly' as const,
       priority: 0.7,

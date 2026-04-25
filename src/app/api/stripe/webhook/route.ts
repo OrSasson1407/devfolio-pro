@@ -3,6 +3,19 @@ import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import Stripe from 'stripe'
 
+interface UserWithReferral {
+  id: string
+  username: string | null
+  stripeId: string | null
+  referredBy: string | null
+  referralCode: string | null
+}
+
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message
+  return 'Webhook handler failed'
+}
+
 export async function POST(req: Request) {
   const body = await req.text()
   const sig = req.headers.get('stripe-signature')!
@@ -15,8 +28,8 @@ export async function POST(req: Request) {
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
     )
-  } catch (err: any) {
-    console.error('[webhook] signature error:', err.message)
+  } catch (err: unknown) {
+    console.error('[webhook] signature error:', getErrorMessage(err))
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
@@ -31,13 +44,11 @@ export async function POST(req: Request) {
 
         const subscription = await stripe.subscriptions.retrieve(subscriptionId)
 
-        // 1. Upgrade the user to PRO
         const updatedUser = await prisma.user.update({
           where: { id: userId },
           data: { plan: 'PRO' },
-        })
+        }) as unknown as UserWithReferral
 
-        // 2. Save subscription details
         await prisma.subscription.upsert({
           where: { userId },
           create: {
@@ -45,42 +56,42 @@ export async function POST(req: Request) {
             stripeSubId: subscriptionId,
             stripePriceId: subscription.items.data[0].price.id,
             status: subscription.status,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
           },
           update: {
             stripeSubId: subscriptionId,
             stripePriceId: subscription.items.data[0].price.id,
             status: subscription.status,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
           },
         })
 
-        // 3. REFERRAL REWARD LOGIC (FIX: Bypassed TS Cache)
-        if ((updatedUser as any).referredBy) {
-          // Find the person who referred them
+        if (updatedUser.referredBy) {
           const referrer = await prisma.user.findUnique({
-            where: { referralCode: (updatedUser as any).referredBy } as any,
-          })
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            where: { referralCode: updatedUser.referredBy } as any,
+          }) as unknown as UserWithReferral | null
 
           if (referrer) {
-            // Increment their credits in our database
             await prisma.user.update({
               where: { id: referrer.id },
-              data: { referralCredits: { increment: 1 } } as any
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              data: { referralCredits: { increment: 1 } } as any,
             })
 
-            // Apply Stripe credit
             if (referrer.stripeId) {
               try {
                 await stripe.customers.createBalanceTransaction(
                   referrer.stripeId,
                   {
-                    amount: -1000, 
+                    amount: -1000,
                     currency: 'usd',
                     description: `Referral credit for inviting ${updatedUser.username || 'a friend'}`,
                   }
                 )
-              } catch (stripeErr) {
+              } catch (stripeErr: unknown) {
                 console.error('Failed to apply Stripe credit to referrer:', stripeErr)
               }
             }
@@ -102,6 +113,7 @@ export async function POST(req: Request) {
           where: { userId: user.id },
           data: {
             status: subscription.status,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
           },
         })
@@ -131,8 +143,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ received: true })
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[webhook] error:', err)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 })
   }
 }

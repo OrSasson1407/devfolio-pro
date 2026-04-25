@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message
+  return 'Failed to update portfolio'
+}
+
 export async function POST(req: Request) {
   try {
     const session = await auth()
@@ -9,20 +14,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { 
-      bio, 
-      skills, 
-      theme, 
+    const {
+      bio,
+      skills,
+      theme,
       openToWork,
-      isPublicDirectory, 
+      isPublicDirectory,
       contactEmail,
-      webhookUrl, // NEW
+      webhookUrl,
       twitter,
       linkedin,
       github,
       website,
-      customSections, 
-      projects 
+      customSections,
+      projects,
     } = await req.json()
 
     const existingPortfolio = await prisma.portfolio.findUnique({
@@ -38,19 +43,19 @@ export async function POST(req: Request) {
 
     const portfolio = await prisma.portfolio.update({
       where: { id: existingPortfolio.id },
-      data: { 
-        bio, 
-        skills, 
-        theme, 
-        openToWork, 
-        isPublicDirectory, 
+      data: {
+        bio,
+        skills,
+        theme,
+        openToWork,
+        isPublicDirectory,
         contactEmail,
-        webhookUrl, // NEW
+        webhookUrl,
         twitter,
         linkedin,
         github,
         website,
-        customSections 
+        customSections,
       },
     })
 
@@ -59,18 +64,18 @@ export async function POST(req: Request) {
         await prisma.project.updateMany({
           where: {
             id: p.id,
-            portfolioId: portfolio.id, 
+            portfolioId: portfolio.id,
           },
-          data: { order: p.order, featured: p.featured, demoUrl: p.demoUrl }, 
+          data: { order: p.order, featured: p.featured, demoUrl: p.demoUrl },
         })
       }
     }
 
     return NextResponse.json({ success: true })
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[portfolio/update] error:', err)
     return NextResponse.json(
-      { error: err.message ?? 'Failed to update portfolio' },
+      { error: getErrorMessage(err) },
       { status: 500 }
     )
   }

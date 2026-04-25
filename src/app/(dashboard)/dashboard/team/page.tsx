@@ -8,11 +8,34 @@ export const metadata = {
   title: 'Team Management — DevFolio Pro',
 }
 
+interface OrgMember {
+  id: string
+  userId: string
+  role: string
+  user: {
+    name: string | null
+    username: string | null
+    email: string | null
+    image: string | null
+    portfolio: unknown | null
+  }
+}
+
+interface Org {
+  name: string
+  members: OrgMember[]
+}
+
+interface Membership {
+  role: string
+  org: Org
+}
+
 export default async function TeamPage() {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
 
-  // FIX 1: Bypass TS Cache with (prisma as any)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const membership = await (prisma as any).orgMember.findFirst({
     where: { userId: session.user.id },
     include: {
@@ -21,14 +44,14 @@ export default async function TeamPage() {
           members: {
             include: {
               user: {
-                include: { portfolio: true }
-              }
-            }
-          }
-        }
-      }
-    }
-  })
+                include: { portfolio: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  }) as Membership | null
 
   // Upsell State: User does not belong to an organization
   if (!membership) {
@@ -65,7 +88,10 @@ export default async function TeamPage() {
         <div className="mt-12 text-center bg-gray-900 border border-gray-800 rounded-xl p-8">
           <h2 className="text-xl font-bold text-white mb-2">Ready to create a Team?</h2>
           <p className="text-sm text-gray-400 mb-6">Upgrade to the Team Plan to unlock cohort management.</p>
-          <Link href="/dashboard/billing" className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-medium px-6 py-3 rounded-lg transition-colors">
+          <Link
+            href="/dashboard/billing"
+            className="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+          >
             Upgrade to Team Plan <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -94,17 +120,21 @@ export default async function TeamPage() {
       <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-800 flex justify-between items-center bg-gray-950">
           <h2 className="text-white font-semibold">Active Members ({org.members.length})</h2>
-          {isAdmin && <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">Admin View</span>}
+          {isAdmin && (
+            <span className="text-xs text-gray-500 bg-gray-800 px-2 py-1 rounded">Admin View</span>
+          )}
         </div>
-        
+
         <div className="divide-y divide-gray-800">
-          {/* FIX 2: Explicitly type member as 'any' to satisfy TS */}
-          {org.members.map((member: any) => (
-            <div key={member.id} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-gray-800/50 transition-colors">
+          {org.members.map((member: OrgMember) => (
+            <div
+              key={member.id}
+              className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-gray-800/50 transition-colors"
+            >
               <div className="flex items-center gap-4">
-                <img 
-                  src={member.user.image || `https://ui-avatars.com/api/?name=${member.user.name}&background=random`} 
-                  alt="" 
+                <img
+                  src={member.user.image || `https://ui-avatars.com/api/?name=${member.user.name}&background=random`}
+                  alt=""
                   className="w-10 h-10 rounded-full"
                 />
                 <div>
@@ -122,8 +152,8 @@ export default async function TeamPage() {
 
               <div className="flex items-center gap-4">
                 {member.user.portfolio ? (
-                  <Link 
-                    href={`/${member.user.username}`} 
+                  <Link
+                    href={`/${member.user.username}`}
                     target="_blank"
                     className="text-sm text-violet-400 hover:text-violet-300 font-medium"
                   >
@@ -132,7 +162,7 @@ export default async function TeamPage() {
                 ) : (
                   <span className="text-sm text-gray-600">No portfolio yet</span>
                 )}
-                
+
                 {isAdmin && member.userId !== session.user.id && (
                   <button className="text-sm text-gray-500 hover:text-red-400 transition-colors">
                     Remove

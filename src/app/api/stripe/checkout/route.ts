@@ -3,18 +3,22 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
 
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message
+  return 'Checkout failed'
+}
+
 export async function POST(req: Request) {
   const session = await auth()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // NEW: Read the billing interval from the request body
   let interval = 'month'
   try {
     const body = await req.json()
     if (body.interval === 'year') interval = 'year'
-  } catch (e) {
+  } catch {
     // Fallback to month if body is empty or fails to parse
   }
 
@@ -43,10 +47,10 @@ export async function POST(req: Request) {
       })
     }
 
-    // NEW: Select the correct Price ID based on the toggle!
-      const priceId = interval === 'year' 
-      ? process.env.STRIPE_PRO_ANNUAL_PRICE_ID! 
-      : process.env.STRIPE_PRO_PRICE_ID!
+    const priceId =
+      interval === 'year'
+        ? process.env.STRIPE_PRO_ANNUAL_PRICE_ID!
+        : process.env.STRIPE_PRO_PRICE_ID!
 
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -64,8 +68,8 @@ export async function POST(req: Request) {
     })
 
     return NextResponse.json({ url: checkoutSession.url })
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('[stripe/checkout] error:', err)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 })
   }
 }

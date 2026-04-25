@@ -4,70 +4,80 @@ import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
+interface ClickEvent {
+  targetName: string | null
+  createdAt: Date
+}
+
+interface PortfolioWithRelations {
+  user: {
+    email: string | null
+    name: string | null
+    username: string | null
+  }
+  views: { referrer: string | null; createdAt: Date }[]
+  clickEvents: ClickEvent[]
+}
+
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message
+  return 'Unknown error'
+}
+
 export async function GET(req: Request) {
-  // Security Check: Ensure only Vercel's Cron scheduler can trigger this
-  // In local development, you can temporarily comment this out to test it in your browser!
   const authHeader = req.headers.get('Authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   try {
-    // 1. Determine the date exactly 7 days ago
     const sevenDaysAgo = new Date()
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
-    // 2. Fetch all portfolios along with their views and clicks from the last 7 days
     const portfolios = await prisma.portfolio.findMany({
       include: {
         user: true,
         views: {
           where: { createdAt: { gte: sevenDaysAgo } },
         },
-        // Using `as any` to bypass TS cache temporarily if needed
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         clickEvents: {
           where: { createdAt: { gte: sevenDaysAgo } },
         } as any,
       },
-    })
+    }) as unknown as PortfolioWithRelations[]
 
     let emailsSent = 0
 
-    // 3. Loop through every user and calculate their weekly stats
     for (const portfolio of portfolios) {
-      // Don't send an email if they have no email address OR if they got 0 views this week (don't spam them)
       if (!portfolio.user.email || portfolio.views.length === 0) continue
 
       const viewCount = portfolio.views.length
-      const clickCount = (portfolio as any).clickEvents?.length || 0
+      const clickCount = portfolio.clickEvents?.length ?? 0
 
-      // Calculate Top Referrer (Traffic Source)
       const referrers = portfolio.views
         .filter((v) => v.referrer)
         .map((v) => {
           try { return new URL(v.referrer!).hostname } catch { return 'Direct' }
         })
-        .reduce((acc, curr) => {
-          acc[curr] = (acc[curr] || 0) + 1
+        .reduce<Record<string, number>>((acc, curr) => {
+          acc[curr] = (acc[curr] ?? 0) + 1
           return acc
-        }, {} as Record<string, number>)
-      
-      // Sort to find the highest count
+        }, {})
+
       const topReferrer = Object.entries(referrers).sort((a, b) => b[1] - a[1])[0]
 
-      // Calculate Most Clicked Item
-      const clicks = ((portfolio as any).clickEvents || [])
-        .filter((c: any) => c.targetName)
-        .reduce((acc: any, curr: any) => {
-          acc[curr.targetName] = (acc[curr.targetName] || 0) + 1
+      const clicks = (portfolio.clickEvents ?? [])
+        .filter((c) => c.targetName)
+        .reduce<Record<string, number>>((acc, curr) => {
+          acc[curr.targetName!] = (acc[curr.targetName!] ?? 0) + 1
           return acc
-        }, {} as Record<string, number>)
-      
-      const topClick = Object.entries(clicks).sort((a: any, b: any) => b[1] - a[1])[0]
+        }, {})
 
-      // 4. Send the Weekly Digest Email!
+      const topClick = Object.entries(clicks).sort((a, b) => b[1] - a[1])[0]
+
       await resend.emails.send({
-        from: 'DevFolio Pro <onboarding@resend.dev>', // Note: Use your verified Resend domain in production!
+        from: 'DevFolio Pro <onboarding@resend.dev>',
         to: portfolio.user.email,
         subject: `📊 Your DevFolio Weekly Digest: ${viewCount} views!`,
         html: `
@@ -89,15 +99,15 @@ export async function GET(req: Request) {
             <p>Keep updating your projects and sharing your link to climb the ranks!</p>
             <p style="color: #6b7280; font-size: 14px;">— The DevFolio Pro Team</p>
           </div>
-        `
+        `,
       })
-      
+
       emailsSent++
     }
 
     return NextResponse.json({ success: true, message: `Sent ${emailsSent} digest emails.` })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Cron Error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })
   }
 }

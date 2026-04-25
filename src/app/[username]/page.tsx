@@ -12,12 +12,37 @@ interface Props {
   params: Promise<{ username: string }>
 }
 
+interface PortfolioExtended {
+  bio: string | null
+  skills: string[]
+  contactEmail: string | null
+  twitter: string | null
+  linkedin: string | null
+  github: string | null
+  website: string | null
+  customSections: unknown
+  contributions: unknown
+  theme: string
+  projects: {
+    id: string
+    title: string
+    description: string | null
+    language: string | null
+    stars: number
+    url: string
+    order: number
+    featured: boolean
+    repoName: string
+    demoUrl: string | null
+  }[]
+}
+
 export async function generateMetadata({ params }: Props) {
   const { username } = await params
 
   const user = await prisma.user.findUnique({
     where: { username },
-    include: { portfolio: true }
+    include: { portfolio: true },
   })
 
   if (!user || !user.portfolio) return { title: 'Not Found' }
@@ -25,9 +50,9 @@ export async function generateMetadata({ params }: Props) {
   const name = user.name ?? user.username ?? 'Developer'
   const image = user.avatar ?? user.image ?? ''
   const bio = user.portfolio.bio ?? `Check out ${name}'s developer portfolio`
-  
+
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  
+
   const ogUrl = new URL(`${appUrl}/api/og`)
   ogUrl.searchParams.set('name', name)
   ogUrl.searchParams.set('username', username)
@@ -80,18 +105,19 @@ export default async function PublicPortfolioPage({ params }: Props) {
 
   if (!user || !user.portfolio) notFound()
 
-  // FIX: Added contactEmail to the payload
+  const portfolio = user.portfolio as unknown as PortfolioExtended
+
   const portfolioData = {
-    bio: user.portfolio.bio,
-    skills: user.portfolio.skills,
-    contactEmail: user.portfolio.contactEmail, 
-    twitter: user.portfolio.twitter,
-    linkedin: user.portfolio.linkedin,
-    github: user.portfolio.github,
-    website: user.portfolio.website,
-    customSections: (user.portfolio as any).customSections,
-    contributions: (user.portfolio as any).contributions, 
-    projects: user.portfolio.projects,
+    bio: portfolio.bio,
+    skills: portfolio.skills,
+    contactEmail: portfolio.contactEmail,
+    twitter: portfolio.twitter,
+    linkedin: portfolio.linkedin,
+    github: portfolio.github,
+    website: portfolio.website,
+    customSections: portfolio.customSections,
+    contributions: portfolio.contributions,
+    projects: portfolio.projects,
   }
 
   const userData = {
@@ -100,7 +126,7 @@ export default async function PublicPortfolioPage({ params }: Props) {
     username: user.username,
   }
 
-  const theme = user.portfolio.theme
+  const theme = portfolio.theme
 
   let ThemeComponent = MinimalTheme
   if (theme === 'terminal') ThemeComponent = TerminalTheme

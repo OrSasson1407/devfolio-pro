@@ -1,3 +1,22 @@
+interface GitHubRepo {
+  name: string
+  description: string | null
+  language: string | null
+  stargazers_count: number
+  forks_count: number
+  html_url: string
+  updated_at: string
+}
+
+interface ContributionDay {
+  date: string
+  contributionCount: number
+}
+
+interface ContributionWeek {
+  contributionDays: ContributionDay[]
+}
+
 // ─── REST API: fetch user repos ───────────────────────────────────────────────
 export async function fetchGitHubRepos(username: string, token: string) {
   const res = await fetch(
@@ -7,22 +26,22 @@ export async function fetchGitHubRepos(username: string, token: string) {
         Authorization: `Bearer ${token}`,
         Accept: 'application/vnd.github+json',
       },
-      next: { revalidate: 3600 }, // cache 1 hour
+      next: { revalidate: 3600 },
     }
   )
 
   if (!res.ok) throw new Error(`GitHub repos fetch failed: ${res.status}`)
 
-  const repos = await res.json()
+  const repos = await res.json() as GitHubRepo[]
 
-  return repos.map((r: any) => ({
+  return repos.map((r) => ({
     name: r.name,
     description: r.description ?? '',
     language: r.language ?? null,
-    stars: r.stargazers_count as number,
-    forks: r.forks_count as number,
-    url: r.html_url as string,
-    updatedAt: r.updated_at as string,
+    stars: r.stargazers_count,
+    forks: r.forks_count,
+    url: r.html_url,
+    updatedAt: r.updated_at,
   }))
 }
 
@@ -89,10 +108,9 @@ export async function fetchGitHubContributions(username: string, token: string) 
   const { data } = await res.json()
   const collection = data?.user?.contributionsCollection
 
-  // Flatten all days from the calendar
   const days: { date: string; count: number }[] =
-    collection?.contributionCalendar?.weeks?.flatMap((week: any) =>
-      week.contributionDays.map((d: any) => ({
+    collection?.contributionCalendar?.weeks?.flatMap((week: ContributionWeek) =>
+      week.contributionDays.map((d: ContributionDay) => ({
         date: d.date,
         count: d.contributionCount,
       }))
@@ -103,7 +121,7 @@ export async function fetchGitHubContributions(username: string, token: string) 
     totalCommits: collection?.totalCommitContributions ?? 0,
     totalPRs: collection?.totalPullRequestContributions ?? 0,
     totalIssues: collection?.totalIssueContributions ?? 0,
-    days, // used for the contribution chart in analytics
+    days,
   }
 }
 

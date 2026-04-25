@@ -13,6 +13,11 @@ import {
 
 const AI_LIMIT_FREE = 5
 
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message
+  return 'AI generation failed'
+}
+
 export async function POST(req: Request) {
   const session = await auth()
   if (!session?.user?.id) {
@@ -72,14 +77,8 @@ export async function POST(req: Request) {
   const portfolioSkills = skills ?? user.portfolio?.skills ?? []
 
   try {
-    // ── Existing types ──────────────────────────────────────────────────────
-
     if (type === 'bio') {
-      const bio = await generateBio({
-        username,
-        projects: portfolioProjects,
-        skills: portfolioSkills,
-      })
+      const bio = await generateBio({ username, projects: portfolioProjects, skills: portfolioSkills })
       return NextResponse.json({ bio })
     }
 
@@ -106,8 +105,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ coverLetter })
     }
 
-    // ── New types ───────────────────────────────────────────────────────────
-
     if (type === 'linkedin-summary') {
       const summary = await generateLinkedInSummary({
         username,
@@ -121,10 +118,7 @@ export async function POST(req: Request) {
       if (!project) {
         return NextResponse.json({ error: 'Project data is required' }, { status: 400 })
       }
-      const points = await generateInterviewTalkingPoints({
-        project,
-        skills: portfolioSkills,
-      })
+      const points = await generateInterviewTalkingPoints({ project, skills: portfolioSkills })
       return NextResponse.json({ points })
     }
 
@@ -138,12 +132,16 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ error: 'Unknown type' }, { status: 400 })
-} catch (err: any) {
+  } catch (err: unknown) {
     console.error('[ai/generate] error:', err)
 
     const isOutOfCredits =
-      err?.error?.error?.type === 'invalid_request_error' &&
-      err?.error?.error?.message?.includes('credit balance is too low')
+      typeof err === 'object' &&
+      err !== null &&
+      'error' in err &&
+      typeof (err as Record<string, unknown>).error === 'object' &&
+      (err as { error: { error?: { type?: string; message?: string } } }).error?.error?.type === 'invalid_request_error' &&
+      (err as { error: { error?: { type?: string; message?: string } } }).error?.error?.message?.includes('credit balance is too low')
 
     if (isOutOfCredits) {
       return NextResponse.json(
@@ -152,6 +150,6 @@ export async function POST(req: Request) {
       )
     }
 
-    return NextResponse.json({ error: err.message ?? 'AI generation failed' }, { status: 500 })
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 })
   }
 }

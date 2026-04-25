@@ -7,6 +7,16 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 const rateLimitMap = new Map<string, number>()
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000
 
+interface PortfolioWithWebhook {
+  id: string
+  webhookUrl?: string | null
+}
+
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message
+  return 'Unknown error'
+}
+
 function isRateLimited(ip: string, username: string): boolean {
   const key = `${ip}:${username}`
   const lastHit = rateLimitMap.get(key)
@@ -46,6 +56,7 @@ export async function POST(req: Request) {
 
     // --- CLICK TRACKING PATH ---
     if (eventType) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await (prisma as any).clickEvent.create({
         data: {
           portfolioId: user.portfolio.id,
@@ -78,7 +89,9 @@ export async function POST(req: Request) {
     })
 
     // Webhook / Zapier Integration with SSRF guard
-    const webhookUrl = (user.portfolio as any).webhookUrl
+    const portfolioWithWebhook = user.portfolio as unknown as PortfolioWithWebhook
+    const webhookUrl = portfolioWithWebhook.webhookUrl
+
     if (webhookUrl) {
       try {
         const parsed = new URL(webhookUrl)
@@ -99,9 +112,9 @@ export async function POST(req: Request) {
               country: country ?? 'unknown',
               timestamp: new Date().toISOString(),
             }),
-          }).catch((err) => console.error('Webhook payload failed to send:', err))
+          }).catch((err: unknown) => console.error('Webhook payload failed to send:', err))
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('Invalid webhook URL:', err)
       }
     }
@@ -154,13 +167,13 @@ export async function POST(req: Request) {
             `,
           })
         }
-      } catch (e) {
+      } catch (e: unknown) {
         console.error('Failed to parse referrer for notification:', e)
       }
     }
 
     return NextResponse.json({ success: true, type: 'view' })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+  } catch (err: unknown) {
+    return NextResponse.json({ error: getErrorMessage(err) }, { status: 500 })
   }
 }

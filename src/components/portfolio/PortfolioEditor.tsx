@@ -55,13 +55,14 @@ interface PortfolioEditorProps {
     skills: string[]
     theme: string
     openToWork: boolean
-    isPublicDirectory: boolean 
+    isPublicDirectory: boolean | null
     contactEmail: string | null
-    webhookUrl: string | null // NEW
+    webhookUrl: string | null
     twitter: string | null
     linkedin: string | null
     github: string | null
     website: string | null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     customSections: any 
     projects: Project[]
   }
@@ -77,7 +78,7 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
   const [openToWork, setOpenToWork] = useState(portfolio.openToWork)
   const [isPublicDirectory, setIsPublicDirectory] = useState(portfolio.isPublicDirectory ?? false) 
   const [contactEmail, setContactEmail] = useState(portfolio.contactEmail ?? '')
-  const [webhookUrl, setWebhookUrl] = useState(portfolio.webhookUrl ?? '') // NEW
+  const [webhookUrl, setWebhookUrl] = useState(portfolio.webhookUrl ?? '')
 
   const [twitter, setTwitter] = useState(portfolio.twitter ?? '')
   const [linkedin, setLinkedin] = useState(portfolio.linkedin ?? '')
@@ -217,7 +218,7 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
           openToWork,
           isPublicDirectory, 
           contactEmail,
-          webhookUrl, // NEW
+          webhookUrl,
           twitter,
           linkedin,
           github,
@@ -344,7 +345,7 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
             className="w-4 h-4 rounded border-gray-700 bg-gray-800 text-violet-600 focus:ring-violet-500 focus:ring-offset-gray-900"
           />
           <label htmlFor="openToWork" className="text-sm text-gray-300 cursor-pointer">
-            Show "Open to work" badge on my portfolio
+            Show &quot;Open to work&quot; badge on my portfolio
           </label>
         </div>
 
@@ -362,7 +363,7 @@ export default function PortfolioEditor({ portfolio }: PortfolioEditorProps) {
         )}
       </div>
 
-      {/* NEW: Integrations & Webhooks */}
+      {/* Integrations & Webhooks */}
       <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 space-y-3">
         <div className="flex items-center gap-2">
           <Webhook className="w-5 h-5 text-violet-400" />

@@ -29,9 +29,9 @@ export default function HireMeBadge({ openToWork, contactEmail }: HireMeBadgePro
       {/* Popover Lead Capture */}
       {isOpen && (
         <div className="absolute top-full left-0 mt-2 w-72 p-4 bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-zinc-900 dark:border-zinc-800 z-50">
-          <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Let's build something great.</h4>
+          <h4 className="font-semibold text-gray-900 dark:text-white mb-1">Let&apos;s build something great.</h4>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-            I'm currently exploring new opportunities. Get in touch to discuss how I can help your team.
+            I&apos;m currently exploring new opportunities. Get in touch to discuss how I can help your team.
           </p>
           
           {contactEmail ? (

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import {
   Mic,
   Zap,
@@ -82,9 +83,9 @@ export default function AIToolsClient({ username, plan, aiCallsThisMonth, portfo
             <p className="text-xs text-amber-400 mt-2 flex items-center gap-1">
               <AlertCircle className="w-3 h-3" />
               Limit reached.{' '}
-              <a href="/dashboard/billing" className="underline hover:text-amber-300">
+              <Link href="/dashboard/billing" className="underline hover:text-amber-300">
                 Upgrade to Pro
-              </a>{' '}
+              </Link>{' '}
               for unlimited AI calls.
             </p>
           )}
@@ -306,7 +307,7 @@ function LinkedInPanel({
           LinkedIn Summary
         </h2>
         <p className="text-gray-400 text-sm mt-1">
-          A polished LinkedIn "About" section written in your voice, ready to copy-paste.
+          A polished LinkedIn &quot;About&quot; section written in your voice, ready to copy-paste.
         </p>
       </div>
 

@@ -36,6 +36,9 @@ interface Props {
 
 type Tab = 'linkedin' | 'interview' | 'tagline'
 
+// Covers both Lucide icons and react-icons
+type IconComponent = React.ComponentType<{ className?: string }>
+
 const AI_LIMIT_FREE = 5
 
 export default function AIToolsClient({ username, plan, aiCallsThisMonth, portfolio }: Props) {
@@ -99,7 +102,7 @@ export default function AIToolsClient({ username, plan, aiCallsThisMonth, portfo
             { id: 'tagline', label: 'Hero Tagline', icon: Zap },
             { id: 'linkedin', label: 'LinkedIn Summary', icon: FaLinkedin },
             { id: 'interview', label: 'Interview Prep', icon: Mic },
-          ] as { id: Tab; label: string; icon: any }[]
+          ] as { id: Tab; label: string; icon: IconComponent }[]
         ).map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -147,7 +150,8 @@ export default function AIToolsClient({ username, plan, aiCallsThisMonth, portfo
 // ─── Tagline Panel ────────────────────────────────────────────────────────────
 
 function TaglinePanel({
-  username,
+  // username is passed from parent but consumed by the API via session server-side
+  username: _username,
   portfolio,
   limitReached,
   onUsed,
@@ -251,7 +255,8 @@ function TaglinePanel({
 // ─── LinkedIn Summary Panel ───────────────────────────────────────────────────
 
 function LinkedInPanel({
-  username,
+  // username is passed from parent but consumed by the API via session server-side
+  username: _username,
   portfolio,
   limitReached,
   onUsed,

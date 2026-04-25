@@ -3,7 +3,7 @@ import Footer from '@/components/shared/Footer'
 import PricingCard from '@/components/shared/PricingCard'
 import { PLANS } from '@/lib/stripe'
 import Link from 'next/link'
-import { ArrowRight, GitBranch, Sparkles, BarChart } from 'lucide-react'
+import { GitBranch, Sparkles, BarChart } from 'lucide-react'
 
 export default function LandingPage() {
   return (
@@ -24,11 +24,10 @@ export default function LandingPage() {
             Sync with GitHub, generate descriptions with AI, and track your views. Stand out to recruiters without writing a single line of CSS.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-            <Link 
-              href="/login" 
+            <Link
+              href="/login"
               className="bg-white text-gray-950 hover:bg-gray-100 px-8 py-4 rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2"
             >
-              {/* BUG FIX: Swapped Github for GitBranch since Lucide removed brand icons */}
               <GitBranch className="w-5 h-5" />
               Continue with GitHub
             </Link>
@@ -43,7 +42,6 @@ export default function LandingPage() {
             </div>
             <div className="grid md:grid-cols-3 gap-8">
               <div className="bg-gray-950 p-8 rounded-2xl border border-gray-800">
-                {/* BUG FIX: Swapped Github for GitBranch */}
                 <GitBranch className="w-10 h-10 text-violet-400 mb-6" />
                 <h3 className="text-xl font-bold text-white mb-3">One-Click Sync</h3>
                 <p className="text-gray-400">Instantly import your repositories, top languages, and contribution graph directly from GitHub.</p>
@@ -51,7 +49,7 @@ export default function LandingPage() {
               <div className="bg-gray-950 p-8 rounded-2xl border border-gray-800">
                 <Sparkles className="w-10 h-10 text-violet-400 mb-6" />
                 <h3 className="text-xl font-bold text-white mb-3">AI Generation</h3>
-                <p className="text-gray-400">Let Anthropic's Claude generate a professional bio, project descriptions, and skill tags for you.</p>
+                <p className="text-gray-400">Let Anthropic&apos;s Claude generate a professional bio, project descriptions, and skill tags for you.</p>
               </div>
               <div className="bg-gray-950 p-8 rounded-2xl border border-gray-800">
                 <BarChart className="w-10 h-10 text-violet-400 mb-6" />
@@ -69,15 +67,15 @@ export default function LandingPage() {
             <p className="text-gray-400 text-lg">Start for free, upgrade when you need more power.</p>
           </div>
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <PricingCard 
-              name={PLANS.FREE.name} 
-              price={PLANS.FREE.price} 
-              features={PLANS.FREE.features} 
+            <PricingCard
+              name={PLANS.FREE.name}
+              price={PLANS.FREE.price}
+              features={PLANS.FREE.features}
             />
-            <PricingCard 
-              name={PLANS.PRO.name} 
-              price={PLANS.PRO.price} 
-              features={PLANS.PRO.features} 
+            <PricingCard
+              name={PLANS.PRO.name}
+              price={PLANS.PRO.price}
+              features={PLANS.PRO.features}
               isPro={true}
             />
           </div>

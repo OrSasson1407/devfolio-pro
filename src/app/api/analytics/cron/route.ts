@@ -40,9 +40,9 @@ export async function GET(req: Request) {
         views: {
           where: { createdAt: { gte: sevenDaysAgo } },
         },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         clickEvents: {
           where: { createdAt: { gte: sevenDaysAgo } },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any,
       },
     }) as unknown as PortfolioWithRelations[]

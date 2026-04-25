@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Remove the top-level Resend instantiation from here
 
 interface ClickEvent {
   targetName: string | null
@@ -29,6 +29,9 @@ export async function GET(req: Request) {
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  // Instantiate Resend inside the request handler so it doesn't run during `next build`
+  const resend = new Resend(process.env.RESEND_API_KEY)
 
   try {
     const sevenDaysAgo = new Date()

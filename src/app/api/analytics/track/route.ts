@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Remove top-level instantiation
 
 const rateLimitMap = new Map<string, number>()
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000
@@ -38,6 +38,9 @@ function isRateLimited(ip: string, username: string): boolean {
 }
 
 export async function POST(req: Request) {
+  // Instantiate Resend inside the request handler
+  const resend = new Resend(process.env.RESEND_API_KEY)
+
   try {
     const { username, referrer, eventType, targetName, targetUrl } = await req.json()
 
